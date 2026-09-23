@@ -1,0 +1,38 @@
+[project]
+name = "reflex-arc"
+version = "0.1.0"
+description = "A dual-process System 1 / System 2 macOS desktop automation agent"
+readme = "README.md"
+requires-python = ">=3.11"
+authors = [{ name = "Bipin Kumar Rai" }]
+dependencies = [
+    "pydantic>=2.7.0",
+    "httpx>=0.27.0",
+    "openai>=1.30.0",
+    "pyyaml>=6.0.1",
+    "fastapi>=0.111.0",
+    "uvicorn>=0.30.0",
+    "websockets>=12.0",
+    "aiosqlite>=0.20.0",
+    "pillow>=10.0.0",
+    "typesafe-sdk>=0.1.0",
+]
+
+[project.optional-dependencies]
+dev = [
+    "pytest>=8.0.0",
+    "pytest-asyncio>=0.23.0",
+    "black>=24.0.0",
+    "ruff>=0.4.0",
+]
+voice = [
+    "mlx-whisper>=0.2.0",
+]
+
+[build-system]
+requires = ["setuptools>=61.0"]
+build-backend = "setuptools.build_meta"
+
+[tool.pytest.ini_options]
+asyncio_mode = "auto"
+testpaths = ["tests"]
