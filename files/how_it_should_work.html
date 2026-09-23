@@ -1,0 +1,337 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>How it should work — Reflex Arc</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Big+Shoulders+Display:wght@800&amp;display=swap">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Atkinson+Hyperlegible:ital,wght@0,400;0,700;1,400&amp;display=swap">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Atkinson+Hyperlegible+Mono:wght@400&amp;display=swap">
+<style>
+:root{
+  --paper:#F1F3F5; --panel:#E4E8EC; --line:#C7CED6; --ink:#1D2733; --muted:#566272;
+  --reflex:#1F4FE0; --reflex-tint:#E1E8FD;
+  --planner:#9A5406; --planner-bar:#C77816; --planner-tint:#F9E9D0;
+  --verify:#0A7264; --verify-tint:#D4EEE9;
+  --body:#5A6676; --body-tint:#E0E5EA;
+  --alert:#B8242B; --alert-tint:#F7DDDE;
+  --display:"Big Shoulders Display","Avenir Next Condensed","Arial Narrow",system-ui,sans-serif;
+  --text:"Atkinson Hyperlegible","Avenir Next",system-ui,-apple-system,"Segoe UI",sans-serif;
+  --mono:"Atkinson Hyperlegible Mono",ui-monospace,"SF Mono",Menlo,Consolas,monospace;
+}
+*{box-sizing:border-box}
+html{color-scheme:light;scroll-padding-top:16px}
+body{margin:0;background:var(--paper);color:var(--ink);font:400 17px/1.62 var(--text);-webkit-font-smoothing:antialiased}
+.skip{position:absolute;left:-999px;top:0;background:var(--ink);color:#fff;padding:8px 12px;z-index:20}
+.skip:focus{left:0}
+:focus-visible{outline:3px solid var(--reflex);outline-offset:2px}
+
+/* page frame */
+.layout{display:grid;grid-template-columns:236px minmax(0,1fr);min-height:100vh}
+.rail{position:sticky;top:0;align-self:start;height:100vh;overflow:auto;padding:30px 22px;border-right:1px solid var(--line)}
+.rail .name{font:800 2rem/1 var(--display);letter-spacing:.01em}
+.rail .sub{margin:.3rem 0 1.6rem;color:var(--muted);font-size:.9rem}
+.rail nav a{display:block;padding:7px 0 7px 12px;border-left:3px solid transparent;color:var(--ink);text-decoration:none}
+.rail nav a:hover{text-decoration:underline}
+.rail nav a[aria-current="page"]{border-left-color:var(--ink);font-weight:700}
+.legend{margin-top:2rem;padding-top:1rem;border-top:1px solid var(--line);font-size:.9rem}
+.legend p{margin:0 0 .6rem;font-weight:700}
+.legend ul{list-style:none;margin:0;padding:0}
+.legend li{margin:0 0 .6rem;color:var(--muted);line-height:1.35}
+main{padding:46px 52px 90px;min-width:0}
+main>p,main>ul,main>ol,main>h2,main>h3,main>details,main>.note{max-width:72ch}
+
+/* type */
+h1{font:800 3.8rem/.95 var(--display);margin:0 0 1.1rem;letter-spacing:.005em}
+h2{font:800 2.1rem/1.05 var(--display);margin:3.2rem 0 .8rem;letter-spacing:.005em}
+h3{font:700 1.1rem/1.3 var(--text);margin:1.8rem 0 .4rem}
+p{margin:0 0 1rem}
+.lead{font-size:1.28rem;line-height:1.5;margin-bottom:1.6rem}
+a{color:var(--reflex)}
+ul,ol{padding-left:1.3rem;margin:0 0 1rem}
+li{margin-bottom:.35rem}
+code{font:400 .88em var(--mono);background:var(--panel);padding:.08em .35em;border-radius:3px}
+pre{font:400 .84rem/1.55 var(--mono);background:var(--panel);padding:16px 18px;overflow:auto;border-left:4px solid var(--body);margin:1rem 0;max-width:100%}
+pre code{background:none;padding:0;font-size:inherit}
+small,.muted{color:var(--muted)}
+
+/* layer tags: colour always paired with a word */
+.k{display:inline-flex;align-items:center;gap:.4em;font-weight:700;white-space:nowrap}
+.k::before{content:"";width:.68em;height:.68em;background:currentColor;flex:none}
+.k.reflex{color:var(--reflex)} .k.planner{color:var(--planner)} .k.verify{color:var(--verify)} .k.body{color:var(--body)}
+
+/* notes */
+.note{border-left:4px solid var(--body);padding:.5rem 0 .2rem 1.1rem;margin:1.6rem 0}
+.note.reflex{border-color:var(--reflex)} .note.planner{border-color:var(--planner)} .note.alert{border-color:var(--alert)} .note.verify{border-color:var(--verify)}
+
+/* tables */
+.scroll{overflow-x:auto;margin:1.2rem 0}
+table{border-collapse:collapse;width:100%;font-size:.94rem}
+th,td{padding:.6rem .85rem .6rem 0;border-bottom:1px solid var(--line);text-align:left;vertical-align:top}
+th{font-weight:700;border-bottom:2px solid var(--ink)}
+td ul{margin:0;padding-left:1.1rem}
+td li{margin-bottom:.3rem}
+td:first-child{font-weight:700}
+table.plain td:first-child{font-weight:400}
+
+/* details */
+details{border-top:1px solid var(--line);padding:.7rem 0;margin:0}
+details:last-of-type{border-bottom:1px solid var(--line)}
+summary{cursor:pointer;font-weight:700;padding:.15rem 0}
+details[open]>summary{margin-bottom:.6rem}
+
+/* numbered moves (a real sequence) */
+ol.moves{list-style:none;counter-reset:m;padding:0;margin:1.2rem 0;max-width:72ch}
+ol.moves>li{counter-increment:m;position:relative;padding:0 0 1.1rem 3.1rem;margin:0}
+ol.moves>li::before{content:counter(m);position:absolute;left:0;top:-.1rem;width:2.1rem;height:2.1rem;display:grid;place-items:center;font:800 1.15rem var(--display);color:#fff;background:var(--body)}
+ol.moves>li.reflex::before{background:var(--reflex)} ol.moves>li.planner::before{background:var(--planner)} ol.moves>li.verify::before{background:var(--verify)}
+
+figure{margin:1.6rem 0}
+figcaption{font-size:.9rem;color:var(--muted);margin-top:.5rem;max-width:72ch}
+
+@media (max-width:900px){
+  .layout{grid-template-columns:1fr}
+  .rail{position:static;height:auto;border-right:0;border-bottom:1px solid var(--line);padding:20px 22px}
+  .rail nav{display:flex;flex-wrap:wrap;gap:0 16px}
+  .legend{display:none}
+  main{padding:30px 22px 70px}
+  h1{font-size:3rem}
+}
+@media (prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important;scroll-behavior:auto!important}}
+ol.moves .k::before{display:none}
+
+</style>
+</head>
+<body>
+<a class="skip" href="#main">Skip to content</a>
+<div class="layout">
+<aside class="rail">
+  <div class="name">Reflex Arc</div>
+  <p class="sub">Working title. Rename freely.</p>
+  <nav aria-label="Project documents">
+    <a href="project_difination.html">Project definition</a>
+    <a href="how_it_should_work.html" aria-current="page">How it should work</a>
+    <a href="system-wiring.html">System wiring</a>
+    <a href="UI.html">UI</a>
+    <a href="roadmap.html">Roadmap</a>
+  </nav>
+  <div class="legend">
+    <p>The four layers</p>
+    <ul>
+      <li><span class="k body">Body</span><br>Cua Driver reads the screen and acts</li>
+      <li><span class="k reflex">Reflex</span><br>Jev picks the next control</li>
+      <li><span class="k planner">Planner</span><br>An LLM plans, writes text, and rescues</li>
+      <li><span class="k verify">Verify</span><br>Noul questions check the result</li>
+    </ul>
+  </div>
+</aside>
+<main id="main">
+<h1>How it should work</h1>
+<p class="lead">A task is a loop of small steps. Every step makes the same five moves: look, describe, decide, act, check.</p>
+<p class="muted" style="max-width:72ch;font-size:.92rem">"Jev" below is shorthand for whichever decision backend is active. Most weeks that is <code>kev</code>, a small local model serving the same typed-question contract; real Jev is swapped in the moment access arrives. See <a href="system-wiring.html">System wiring</a> for the interface and the differences between them.</p>
+
+<div class="note reflex">
+<p><strong>The analogy.</strong> A driver at a junction. Eyes take in the scene, the mind names what matters, a trained reflex picks the turn, hands turn the wheel, and a glance in the mirror confirms the car went where intended. A navigator in the passenger seat only speaks up when the driver is unsure.</p>
+</div>
+
+<h2>One step, in order</h2>
+<ol class="moves">
+<li class="body"><strong><span class="k body">Look</span></strong><br>Cua Driver reads the UI element tree of the front window. It also saves a screenshot, used only for the log and for escalations to the LLM.</li>
+<li class="body"><strong><span class="k body">Describe</span></strong><br>The serializer turns the tree into short numbered lines such as <code>e17 button "Add reminder"</code> and keeps the most relevant elements, at most 255, so one Choice question can cover them.</li>
+<li class="reflex"><strong><span class="k reflex">Decide</span></strong><br>One Jev request carries the state plus several small questions. Choice asks which element to act on next. Noul asks yes-or-no questions such as "is the goal reached" and "is an error visible". Jev answers them in parallel with probabilities, and a confidence value for each Choice.</li>
+<li class="body"><strong><span class="k body">Act</span></strong><br>If the answer clears the gates below, the Driver clicks or types on that element. If not, the step escalates to the planner.</li>
+<li class="verify"><strong><span class="k verify">Check</span></strong><br>After the screen settles, the next pass asks a Noul question: did the intended change happen? If it did not happen twice in a row, the planner replans.</li>
+</ol>
+
+<h2>Voice as a second input channel</h2>
+<p>Push-to-talk speech, transcribed locally, can do two things: start a new task, or interrupt a running one with a correction. It never becomes a new kind of decision-maker. A transcript is just text, and text already has a place in this loop: it goes wherever <code>task</code> already goes, or into <code>planner.replan()</code> as a correction.</p>
+<div class="note reflex">
+<p><strong>The analogy.</strong> A passenger who can say "turn left" at a red light, never while the car is mid-turn. The only safe moment to listen for a correction is the same place the loop already pauses to look at the road: the top of the loop, between <span class="k verify">Check</span> and the next <span class="k reflex">Decide</span>.</p>
+</div>
+<ul>
+<li><strong>No run active:</strong> a push-to-talk transcript becomes <code>task</code>, exactly like typed input. The loop starts as usual.</li>
+<li><strong>A run is active:</strong> the transcript is queued, never applied mid-step. At the top of the next iteration, the loop drains the queue, sends the transcript to <code>planner.replan()</code> as a correction alongside the current screen and history, and continues with the revised plan.</li>
+<li><strong>A risky action is pending approval:</strong> a spoken correction can redirect or cancel, but it can never itself approve the pending action. The click-to-approve gate stays in force no matter which input channel produced the plan. This is a fixed rule in code, not a confidence threshold, so it holds even if the correction sounds unambiguous.</li>
+</ul>
+<p>Nothing else changes. The mic thread only ever writes to a small queue; it never calls <code>body.act()</code>, never touches the gates, and never talks to the decision backend directly. One optional field is added to <code>StepRecord</code>: <code>interrupt</code>, present only on a step where a queued correction was applied.</p>
+
+<h2>Who decides what</h2>
+<div class="scroll">
+<table>
+<thead><tr><th>Decision</th><th>Decided by</th><th>Why</th></tr></thead>
+<tbody>
+<tr><td>The plan and the goal statement</td><td style="font-weight:400"><span class="k planner">Planner LLM</span>, once per task and again on replan</td><td style="font-weight:400">Needs language and reasoning</td></tr>
+<tr><td>Which element to act on next</td><td style="font-weight:400"><span class="k reflex">Jev</span>, Choice</td><td style="font-weight:400">Small, well-scoped, needs to be fast</td></tr>
+<tr><td>What text to type</td><td style="font-weight:400"><span class="k planner">Text LLM</span></td><td style="font-weight:400">Jev does not generate text</td></tr>
+<tr><td>Did it work? Is the goal reached?</td><td style="font-weight:400"><span class="k verify">Jev</span>, Noul</td><td style="font-weight:400">A cheap yes-or-no judgement at every step</td></tr>
+<tr><td>Is this action risky?</td><td style="font-weight:400">Fixed rules in code</td><td style="font-weight:400">Must never depend on a model's confidence</td></tr>
+<tr><td>Should the run stop?</td><td style="font-weight:400">The orchestrator</td><td style="font-weight:400">Hard caps on steps, time, and cost</td></tr>
+</tbody>
+</table>
+</div>
+
+<h2>When Jev is not sure</h2>
+<div class="scroll">
+<table>
+<thead><tr><th>Trigger</th><th>What happens</th></tr></thead>
+<tbody>
+<tr><td>Confidence below the gate (start at 0.70)</td><td style="font-weight:400">The planner LLM sees the same candidates plus the screenshot, and picks one or says none</td></tr>
+<tr><td>Top two choices are close (start: gap under 0.15)</td><td style="font-weight:400">Same as above</td></tr>
+<tr><td>The intended effect is not seen twice in a row</td><td style="font-weight:400">The planner replans from the current screen</td></tr>
+<tr><td>The same screen appears three times</td><td style="font-weight:400">Loop breaker: replan once, then stop</td></tr>
+<tr><td>The action is risky: delete, overwrite, send, buy</td><td style="font-weight:400">Always ask a human, whatever the confidence</td></tr>
+<tr><td>The planner is also unsure, or a budget runs out</td><td style="font-weight:400">Pause and ask a human, or stop and report</td></tr>
+</tbody>
+</table>
+</div>
+<p>Every threshold here is a starting hypothesis. The trace data from weeks 5 to 9 sets the real values.</p>
+
+<h2>A sample run, without numbers</h2>
+<p>Sample task: create a reminder from a sentence. The numbers for this same run are on the <a href="UI.html">UI</a> page.</p>
+<div class="scroll">
+<table>
+<thead><tr><th>Step</th><th>Question to Jev</th><th>What happens</th></tr></thead>
+<tbody>
+<tr><td>1</td><td style="font-weight:400">Which app should be in front?</td><td style="font-weight:400">Jev is sure. Bring Reminders to the front</td></tr>
+<tr><td>2</td><td style="font-weight:400">Which control creates a new reminder?</td><td style="font-weight:400">Jev is sure. Click "Add reminder"</td></tr>
+<tr><td>3</td><td style="font-weight:400">Which field takes the title?</td><td style="font-weight:400">Jev is sure about the field; the text LLM writes the title</td></tr>
+<tr><td>4</td><td style="font-weight:400">Which control sets the due date?</td><td style="font-weight:400">Jev is unsure, so the step escalates and the planner picks the date toggle</td></tr>
+<tr><td>5</td><td style="font-weight:400">Which day cell is Friday?</td><td style="font-weight:400">Jev is sure, choosing among about 30 cells</td></tr>
+<tr><td>6</td><td style="font-weight:400">Which control confirms?</td><td style="font-weight:400">Jev is sure. Click "Done"</td></tr>
+<tr><td>End</td><td style="font-weight:400">Is the goal reached?</td><td style="font-weight:400">Noul says yes; a code check on the real end state confirms it</td></tr>
+</tbody>
+</table>
+</div>
+
+<h2>The loop in raw code</h2>
+<details>
+<summary>Open the full loop</summary>
+<p><code>backend.decide</code> stands in for the Jev request. The real request and response shape comes from the Jev Quick Start; confirm it in week 1. The loop uses plain loops and lists so every state is easy to trace by hand.</p>
+<pre><code>def run_task(task, body, backend, planner, limits):
+    plan = planner.make_plan(task)              # LLM, once per task
+    history = []
+    seen_screens = {}
+    failed_in_a_row = 0
+    step_number = 0
+
+    while step_number &lt; limits.max_steps:
+        step_number = step_number + 1
+
+        # Voice interrupt (checked only here, never mid-step)
+        interrupt_record = None
+        if voice.has_pending_command():
+            correction = voice.pop_pending_command()
+            window_for_replan = body.read_frontmost_window()
+            plan = planner.replan(task, window_for_replan, history, correction=correction)
+            interrupt_record = {"source": "voice", "transcript": correction}
+            # Note: this cannot approve a pending risky action.
+            # The approval gate below is still checked normally on this
+            # step's own action, whatever the new plan proposes.
+
+        # Look and describe (Body)
+        window = body.read_frontmost_window()
+        elements = serialize_and_prune(window, max_elements=255)
+        screen_id = hash_screen(elements)
+
+        if screen_id in seen_screens:
+            seen_screens[screen_id] = seen_screens[screen_id] + 1
+        else:
+            seen_screens[screen_id] = 1
+
+        if seen_screens[screen_id] &gt;= 3:        # loop breaker
+            plan = planner.replan(task, window, history)
+            seen_screens = {}
+            continue
+
+        # Decide (Reflex): several small questions in one request
+        questions = []
+        questions.append(Choice("next_element", elements))
+        questions.append(Noul("goal_reached", plan.goal_statement))
+        questions.append(Noul("error_visible", "An error dialog is visible"))
+        if len(history) &gt; 0:
+            questions.append(Noul("last_action_worked", describe_intended_effect(history[-1])))
+
+        state_text = build_state_text(task, plan, elements, history)
+        answers = backend.decide(state=state_text, questions=questions)
+
+        # Check (Verify)
+        if answers.noul("goal_reached") &gt;= 0.90:
+            return finish(task, history, "goal reached, awaiting code check")
+
+        if answers.noul("error_visible") &gt;= 0.80:
+            plan = planner.replan(task, window, history)
+            continue
+
+        if len(history) &gt; 0:
+            if answers.noul("last_action_worked") &lt; 0.50:
+                failed_in_a_row = failed_in_a_row + 1
+            else:
+                failed_in_a_row = 0
+            if failed_in_a_row &gt;= 2:
+                plan = planner.replan(task, window, history)
+                failed_in_a_row = 0
+                continue
+
+        # Gates
+        choice = answers.choice("next_element")
+        top_two_gap = choice.top_probability - choice.second_probability
+        sure_enough = False
+        if choice.confidence &gt;= limits.confidence_gate:
+            if top_two_gap &gt;= limits.min_gap:
+                sure_enough = True
+
+        if sure_enough:
+            element = choice.value
+            decided_by = "jev"
+        else:
+            element = planner.pick_element(task, plan, elements, window.screenshot)
+            decided_by = "llm"
+            if element is None:
+                return ask_human(task, history, "planner also unsure")
+
+        action = action_for(element, plan)        # click, type, or press
+        if is_risky(action):
+            if not human_approves(action):
+                return finish(task, history, "stopped by human")
+
+        text_value = None
+        if action.kind == "type":
+            text_value = planner.write_text(task, plan, element)
+
+        # Act (Body)
+        body.act(element, action, text_value)
+        history.append(record_step(step_number, decided_by, answers, element, action, interrupt=interrupt_record))
+        body.wait_until_settled()
+
+    return finish(task, history, "step limit reached")</code></pre>
+</details>
+
+<h2>When things go wrong</h2>
+<div class="scroll">
+<table>
+<thead><tr><th>Situation</th><th>What should happen</th></tr></thead>
+<tbody>
+<tr><td>The app exposes little or nothing in its UI tree</td><td style="font-weight:400">The step goes to the planner with the screenshot. If a whole app behaves this way it cannot be the hero task</td></tr>
+<tr><td>The screen is still animating when read</td><td style="font-weight:400">Read again until two reads match, with a time limit</td></tr>
+<tr><td>Jev picks the wrong control with high confidence</td><td style="font-weight:400">The next Noul check should catch it. Every such case is counted in the calibration table</td></tr>
+<tr><td>Jev says the goal is reached but it is not</td><td style="font-weight:400">Final success is decided by a code check on the real end state, never by Jev alone</td></tr>
+<tr><td>An API call times out</td><td style="font-weight:400">One retry, then escalate the step. Three timeouts in a row stop the run</td></tr>
+</tbody>
+</table>
+</div>
+
+<h2>Safety rules that never depend on a model</h2>
+<ul>
+<li>The agent runs in a dedicated macOS user (later possibly a VM) with no personal accounts signed in.</li>
+<li>Only allowlisted apps can be controlled.</li>
+<li>Deleting, overwriting, sending, and buying always need a human click — a spoken correction can redirect or cancel, but it can never itself approve a risky action.</li>
+<li>A kill switch stops the run within one step. Limits on steps, time, and cost are hard caps.</li>
+<li>API keys live only in the orchestrator process, never in the sandbox.</li>
+</ul>
+
+</main>
+</div>
+</body>
+</html>

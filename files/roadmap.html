@@ -1,0 +1,322 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Roadmap — Reflex Arc</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Big+Shoulders+Display:wght@800&amp;display=swap">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Atkinson+Hyperlegible:ital,wght@0,400;0,700;1,400&amp;display=swap">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Atkinson+Hyperlegible+Mono:wght@400&amp;display=swap">
+<style>
+:root{
+  --paper:#F1F3F5; --panel:#E4E8EC; --line:#C7CED6; --ink:#1D2733; --muted:#566272;
+  --reflex:#1F4FE0; --reflex-tint:#E1E8FD;
+  --planner:#9A5406; --planner-bar:#C77816; --planner-tint:#F9E9D0;
+  --verify:#0A7264; --verify-tint:#D4EEE9;
+  --body:#5A6676; --body-tint:#E0E5EA;
+  --alert:#B8242B; --alert-tint:#F7DDDE;
+  --display:"Big Shoulders Display","Avenir Next Condensed","Arial Narrow",system-ui,sans-serif;
+  --text:"Atkinson Hyperlegible","Avenir Next",system-ui,-apple-system,"Segoe UI",sans-serif;
+  --mono:"Atkinson Hyperlegible Mono",ui-monospace,"SF Mono",Menlo,Consolas,monospace;
+}
+*{box-sizing:border-box}
+html{color-scheme:light;scroll-padding-top:16px}
+body{margin:0;background:var(--paper);color:var(--ink);font:400 17px/1.62 var(--text);-webkit-font-smoothing:antialiased}
+.skip{position:absolute;left:-999px;top:0;background:var(--ink);color:#fff;padding:8px 12px;z-index:20}
+.skip:focus{left:0}
+:focus-visible{outline:3px solid var(--reflex);outline-offset:2px}
+
+/* page frame */
+.layout{display:grid;grid-template-columns:236px minmax(0,1fr);min-height:100vh}
+.rail{position:sticky;top:0;align-self:start;height:100vh;overflow:auto;padding:30px 22px;border-right:1px solid var(--line)}
+.rail .name{font:800 2rem/1 var(--display);letter-spacing:.01em}
+.rail .sub{margin:.3rem 0 1.6rem;color:var(--muted);font-size:.9rem}
+.rail nav a{display:block;padding:7px 0 7px 12px;border-left:3px solid transparent;color:var(--ink);text-decoration:none}
+.rail nav a:hover{text-decoration:underline}
+.rail nav a[aria-current="page"]{border-left-color:var(--ink);font-weight:700}
+.legend{margin-top:2rem;padding-top:1rem;border-top:1px solid var(--line);font-size:.9rem}
+.legend p{margin:0 0 .6rem;font-weight:700}
+.legend ul{list-style:none;margin:0;padding:0}
+.legend li{margin:0 0 .6rem;color:var(--muted);line-height:1.35}
+main{padding:46px 52px 90px;min-width:0}
+main>p,main>ul,main>ol,main>h2,main>h3,main>details,main>.note{max-width:72ch}
+
+/* type */
+h1{font:800 3.8rem/.95 var(--display);margin:0 0 1.1rem;letter-spacing:.005em}
+h2{font:800 2.1rem/1.05 var(--display);margin:3.2rem 0 .8rem;letter-spacing:.005em}
+h3{font:700 1.1rem/1.3 var(--text);margin:1.8rem 0 .4rem}
+p{margin:0 0 1rem}
+.lead{font-size:1.28rem;line-height:1.5;margin-bottom:1.6rem}
+a{color:var(--reflex)}
+ul,ol{padding-left:1.3rem;margin:0 0 1rem}
+li{margin-bottom:.35rem}
+code{font:400 .88em var(--mono);background:var(--panel);padding:.08em .35em;border-radius:3px}
+pre{font:400 .84rem/1.55 var(--mono);background:var(--panel);padding:16px 18px;overflow:auto;border-left:4px solid var(--body);margin:1rem 0;max-width:100%}
+pre code{background:none;padding:0;font-size:inherit}
+small,.muted{color:var(--muted)}
+
+/* layer tags: colour always paired with a word */
+.k{display:inline-flex;align-items:center;gap:.4em;font-weight:700;white-space:nowrap}
+.k::before{content:"";width:.68em;height:.68em;background:currentColor;flex:none}
+.k.reflex{color:var(--reflex)} .k.planner{color:var(--planner)} .k.verify{color:var(--verify)} .k.body{color:var(--body)}
+
+/* notes */
+.note{border-left:4px solid var(--body);padding:.5rem 0 .2rem 1.1rem;margin:1.6rem 0}
+.note.reflex{border-color:var(--reflex)} .note.planner{border-color:var(--planner)} .note.alert{border-color:var(--alert)} .note.verify{border-color:var(--verify)}
+
+/* tables */
+.scroll{overflow-x:auto;margin:1.2rem 0}
+table{border-collapse:collapse;width:100%;font-size:.94rem}
+th,td{padding:.6rem .85rem .6rem 0;border-bottom:1px solid var(--line);text-align:left;vertical-align:top}
+th{font-weight:700;border-bottom:2px solid var(--ink)}
+td ul{margin:0;padding-left:1.1rem}
+td li{margin-bottom:.3rem}
+td:first-child{font-weight:700}
+table.plain td:first-child{font-weight:400}
+
+/* details */
+details{border-top:1px solid var(--line);padding:.7rem 0;margin:0}
+details:last-of-type{border-bottom:1px solid var(--line)}
+summary{cursor:pointer;font-weight:700;padding:.15rem 0}
+details[open]>summary{margin-bottom:.6rem}
+
+/* numbered moves (a real sequence) */
+ol.moves{list-style:none;counter-reset:m;padding:0;margin:1.2rem 0;max-width:72ch}
+ol.moves>li{counter-increment:m;position:relative;padding:0 0 1.1rem 3.1rem;margin:0}
+ol.moves>li::before{content:counter(m);position:absolute;left:0;top:-.1rem;width:2.1rem;height:2.1rem;display:grid;place-items:center;font:800 1.15rem var(--display);color:#fff;background:var(--body)}
+ol.moves>li.reflex::before{background:var(--reflex)} ol.moves>li.planner::before{background:var(--planner)} ol.moves>li.verify::before{background:var(--verify)}
+
+figure{margin:1.6rem 0}
+figcaption{font-size:.9rem;color:var(--muted);margin-top:.5rem;max-width:72ch}
+
+@media (max-width:900px){
+  .layout{grid-template-columns:1fr}
+  .rail{position:static;height:auto;border-right:0;border-bottom:1px solid var(--line);padding:20px 22px}
+  .rail nav{display:flex;flex-wrap:wrap;gap:0 16px}
+  .legend{display:none}
+  main{padding:30px 22px 70px}
+  h1{font-size:3rem}
+}
+@media (prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important;scroll-behavior:auto!important}}
+ol.moves .k::before{display:none}
+
+</style>
+</head>
+<body>
+<a class="skip" href="#main">Skip to content</a>
+<div class="layout">
+<aside class="rail">
+  <div class="name">Reflex Arc</div>
+  <p class="sub">Working title. Rename freely.</p>
+  <nav aria-label="Project documents">
+    <a href="project_difination.html">Project definition</a>
+    <a href="how_it_should_work.html">How it should work</a>
+    <a href="system-wiring.html">System wiring</a>
+    <a href="UI.html">UI</a>
+    <a href="roadmap.html" aria-current="page">Roadmap</a>
+  </nav>
+  <div class="legend">
+    <p>The four layers</p>
+    <ul>
+      <li><span class="k body">Body</span><br>Cua Driver reads the screen and acts</li>
+      <li><span class="k reflex">Reflex</span><br>Jev picks the next control</li>
+      <li><span class="k planner">Planner</span><br>An LLM plans, writes text, and rescues</li>
+      <li><span class="k verify">Verify</span><br>Noul questions check the result</li>
+    </ul>
+  </div>
+</aside>
+<main id="main">
+<style>
+.gantt-wrap{overflow-x:auto;margin:1.4rem 0 .6rem}
+.gantt{min-width:900px;display:grid;grid-template-columns:150px repeat(84,minmax(0,1fr));row-gap:6px;align-items:center;font-size:.85rem}
+.g-lab{grid-column:1;font-weight:700;padding-right:8px}
+.g-wk{border-left:1px solid var(--line);padding-left:4px;line-height:1.25;color:var(--muted);font-size:.78rem;padding-bottom:4px}
+.g-wk b{display:block;color:var(--ink)}
+.g-bar{height:28px;display:flex;align-items:center;padding:0 6px;background:var(--ink);color:#fff;font-weight:700;font-size:.76rem;white-space:nowrap;overflow:hidden}
+.g-bar.off{background:repeating-linear-gradient(135deg,var(--panel) 0 8px,#fff 8px 16px);color:var(--ink);border:1.5px solid var(--body)}
+.g-bar.done{background:var(--body)}
+.g-note{font-size:.88rem;color:var(--muted);max-width:72ch;margin:0 0 1rem}
+.check{list-style:none;padding:0}
+.check li{display:flex;gap:.7rem;align-items:flex-start}
+.check input{margin-top:.4rem;flex:none;width:1.05rem;height:1.05rem}
+dl.phase{display:grid;grid-template-columns:8.5rem 1fr;gap:.5rem 1rem;margin:0 0 .6rem}
+dl.phase dt{font-weight:700}
+dl.phase dd{margin:0}
+dl.phase ul{margin:0;padding-left:1.1rem}
+@media (max-width:640px){dl.phase{grid-template-columns:1fr}}
+</style>
+
+<h1>Roadmap</h1>
+<p class="lead">Twelve weeks from Sep 28 to Dec 20, shaped around the academic calendar: build the showable version before Nov 9, coast through the exam window, then harden, measure, and ship.</p>
+
+<h2>The plan at a glance</h2>
+<div class="gantt-wrap">
+<div class="gantt" role="img" aria-label="Twelve-week plan: spike weeks 1 to 2, skeleton weeks 3 to 4, hero task weeks 5 to 6, reduced hours Nov 9 to Nov 25, harden Nov 26 to Dec 6, console and evaluation week 11, ship week 12">
+  <span class="g-lab" style="grid-row:1"></span>
+  <span class="g-wk" style="grid-row:1;grid-column:2 / span 7"><b>W1</b>Sep 28</span>
+  <span class="g-wk" style="grid-row:1;grid-column:9 / span 7"><b>W2</b>Oct 5</span>
+  <span class="g-wk" style="grid-row:1;grid-column:16 / span 7"><b>W3</b>Oct 12</span>
+  <span class="g-wk" style="grid-row:1;grid-column:23 / span 7"><b>W4</b>Oct 19</span>
+  <span class="g-wk" style="grid-row:1;grid-column:30 / span 7"><b>W5</b>Oct 26</span>
+  <span class="g-wk" style="grid-row:1;grid-column:37 / span 7"><b>W6</b>Nov 2</span>
+  <span class="g-wk" style="grid-row:1;grid-column:44 / span 7"><b>W7</b>Nov 9</span>
+  <span class="g-wk" style="grid-row:1;grid-column:51 / span 7"><b>W8</b>Nov 16</span>
+  <span class="g-wk" style="grid-row:1;grid-column:58 / span 7"><b>W9</b>Nov 23</span>
+  <span class="g-wk" style="grid-row:1;grid-column:65 / span 7"><b>W10</b>Nov 30</span>
+  <span class="g-wk" style="grid-row:1;grid-column:72 / span 7"><b>W11</b>Dec 7</span>
+  <span class="g-wk" style="grid-row:1;grid-column:79 / span 7"><b>W12</b>Dec 14</span>
+
+  <span class="g-lab" style="grid-row:2">A. Spike</span>
+  <span class="g-bar" style="grid-row:2;grid-column:2 / 16">Sep 28 to Oct 11</span>
+  <span class="g-lab" style="grid-row:3">B. Walking skeleton</span>
+  <span class="g-bar" style="grid-row:3;grid-column:16 / 30">Oct 12 to 25</span>
+  <span class="g-lab" style="grid-row:4">C. Hero task, v0 video</span>
+  <span class="g-bar" style="grid-row:4;grid-column:30 / 44">Oct 26 to Nov 8</span>
+  <span class="g-lab" style="grid-row:5">Reduced hours</span>
+  <span class="g-bar off" style="grid-row:5;grid-column:44 / 61">Nov 9 to 25</span>
+  <span class="g-lab" style="grid-row:6">D. Harden</span>
+  <span class="g-bar" style="grid-row:6;grid-column:61 / 72">To Dec 6</span>
+  <span class="g-lab" style="grid-row:7">E. Console and eval</span>
+  <span class="g-bar" style="grid-row:7;grid-column:72 / 79">W11</span>
+  <span class="g-lab" style="grid-row:8">F. Ship</span>
+  <span class="g-bar" style="grid-row:8;grid-column:79 / 86">W12</span>
+</div>
+</div>
+<p class="g-note">The hatched bar is the reduced-hours window: classes end, exams run, and festival days fall inside it. Week 0 (Sep 22 to 27) comes before the chart. The showable v0 is due before the window opens.</p>
+
+<h2>Week 0: this week</h2>
+<ul class="check">
+<li><input type="checkbox" id="w0a"><label for="w0a">Request Jev early access at typesafe.ai and create a console account. Do this first: it is a waitlist.</label></li>
+<li><input type="checkbox" id="w0b"><label for="w0b">Install Cua Driver, grant Accessibility and Screen Recording to <code>CuaDriver.app</code>, run <code>cua-driver doctor</code>, and finish the Calculator 6 × 7 tutorial.</label></li>
+<li><input type="checkbox" id="w0c"><label for="w0c">Create the repo and put these five docs under <code>/docs</code>.</label></li>
+<li><input type="checkbox" id="w0d"><label for="w0d">Read the Jev docs (Quick Start, Choice, Noul, Confidence, Patterns) and TypeSafe's terms of use.</label></li>
+<li><input type="checkbox" id="w0f"><label for="w0f">Clone <code>jaredpalmer/kev</code>, download the <code>kev-0.5b</code> release, and start the local <code>/v1/systemone</code> server as the default decision backend while waiting on Jev access.</label></li>
+<li><input type="checkbox" id="w0e"><label for="w0e">Start a <code>VERSIONS.md</code> that records the Driver release and the kev release now, and the Jev model version once you have access.</label></li>
+</ul>
+
+<h2>The phases</h2>
+<details>
+<summary>A. Spike (weeks 1 to 2, Sep 28 to Oct 11): find out what is actually true</summary>
+<dl class="phase">
+<dt>Tasks</dt><dd><ul>
+<li>Dump the UI tree of 3 or 4 candidate apps and rate how usable each is as text.</li>
+<li>Make a first Jev call with a Choice and a Noul question. Measure the round trip from Patna over 30 calls and record p50 and p95.</li>
+<li>Try Choice questions with 50 and with 255 options to see how it behaves near the cap.</li>
+<li>Decide D1 and D2. Write the <code>DecisionBackend</code> and <code>Body</code> interfaces with fakes.</li>
+</ul></dd>
+<dt>Exit gate</dt><dd>The chosen app's UI tree reads well as text, latency is measured, and the hero task is chosen. If there is no Jev access by Oct 4, the LLM backend becomes the default until access lands.</dd>
+<dt>Cut if behind</dt><dd>Nothing. This phase is the safety net.</dd>
+</dl>
+</details>
+<details>
+<summary>B. Walking skeleton (weeks 3 to 4, Oct 12 to 25): the smallest loop that works</summary>
+<dl class="phase">
+<dt>Tasks</dt><dd><ul>
+<li>Serializer v1, loop controller, and trace writer to SQLite with screenshots.</li>
+<li>Choice and Noul through the backend interface; the LLM backend behind the same interface.</li>
+<li>A static trace viewer: HTML generated from SQLite.</li>
+<li>Record and replay tests using the fakes.</li>
+</ul></dd>
+<dt>Exit gate</dt><dd>Calculator 6 × 7 succeeds 10 times out of 10, each with a complete trace.</dd>
+<dt>Cut if behind</dt><dd>The trace viewer becomes a JSON dump.</dd>
+<dt>Note</dt><dd>Week 3 has a quiz window and week 4 has the Durga Puja break, so keep week 3 light and use the holiday for the hard part.</dd>
+</dl>
+</details>
+<details>
+<summary>C. Hero task and v0 video (weeks 5 to 6, Oct 26 to Nov 8)</summary>
+<dl class="phase">
+<dt>Tasks</dt><dd><ul>
+<li>Serializer pruning to 255 elements; planner for plan, replan, and text.</li>
+<li>Confidence gate, top-two gap gate, loop breaker, and risk gate.</li>
+<li>The hero task end to end, with a code check on the real end state.</li>
+<li>Record the v0 demo video.</li>
+</ul></dd>
+<dt>Exit gate</dt><dd>The hero task completes end to end at least once, and the video is recorded before Nov 9.</dd>
+<dt>Cut if behind</dt><dd>A second app; the approval screen becomes a terminal prompt.</dd>
+</dl>
+</details>
+<details>
+<summary>Reduced-hours window (Nov 9 to Nov 25)</summary>
+<dl class="phase">
+<dt>Allowed</dt><dd>Unattended repeatability runs in the background and short notes on failures.</dd>
+<dt>Not allowed</dt><dd>New features.</dd>
+<dt>Exit gate</dt><dd>None. Protect the exams.</dd>
+</dl>
+</details>
+<details>
+<summary>D. Harden (Nov 26 to Dec 6)</summary>
+<dl class="phase">
+<dt>Tasks</dt><dd><ul>
+<li>Tune the gates from the trace data.</li>
+<li>Run 20 consecutive runs of the hero task and record the results.</li>
+<li>Settle the sandbox (D3): dedicated user, and a Lume VM only if the Driver runs inside it.</li>
+<li>Kill switch, budgets, and the top five failure causes.</li>
+</ul></dd>
+<dt>Exit gate</dt><dd>20 consecutive runs measured, and the safety rules enforced by code and covered by tests.</dd>
+<dt>Cut if behind</dt><dd>The Lume VM.</dd>
+</dl>
+</details>
+<details>
+<summary>E. Console and evaluation (week 11, Dec 7 to 13)</summary>
+<dl class="phase">
+<dt>Tasks</dt><dd><ul>
+<li>The live run console, batch results, and the calibration table (see <a href="UI.html">UI</a>).</li>
+<li>Stretch: the LLM-only baseline on the same task.</li>
+</ul></dd>
+<dt>Exit gate</dt><dd>Numbers exist for all five success measures, and the console shows a real run.</dd>
+<dt>Cut if behind</dt><dd>The baseline, and React (use plain HTML).</dd>
+</dl>
+</details>
+<details>
+<summary>F. Ship (week 12, Dec 14 to 20)</summary>
+<dl class="phase">
+<dt>Tasks</dt><dd><ul>
+<li>README with measured numbers and a failure analysis.</li>
+<li>Final demo video of about 90 seconds.</li>
+<li>One resume bullet, using only numbers from your own runs.</li>
+</ul></dd>
+<dt>Exit gate</dt><dd>The repo is public and the demo is linked from the resume.</dd>
+<dt>Cut if behind</dt><dd>The write-up.</dd>
+</dl>
+</details>
+
+<h2>Cut lines</h2>
+<p>If time runs short, drop things in this order:</p>
+<ol>
+<li>The LLM-only baseline</li>
+<li>A second hero task</li>
+<li>The Lume VM</li>
+<li>The live console (fall back to the static trace viewer)</li>
+<li>The write-up</li>
+</ol>
+<p>Never cut confidence gating, the Noul checks, trace logging, the safety rules, or honest metrics. They are the project.</p>
+
+<h2>When each caveat gets resolved</h2>
+<p>IDs refer to the table in <a href="system-wiring.html">System wiring</a>.</p>
+<div class="scroll">
+<table>
+<thead><tr><th>ID</th><th>Caveat</th><th>Resolved by</th></tr></thead>
+<tbody>
+<tr><td>C1</td><td style="font-weight:400">Jev access</td><td style="font-weight:400">Request in week 0; <code>kev</code> serves as the default backend meanwhile; switch to Jev the day access arrives (D6)</td></tr>
+<tr><td>C2</td><td style="font-weight:400">Text-only input and UI tree quality</td><td style="font-weight:400">Spike, weeks 1 to 2</td></tr>
+<tr><td>C3</td><td style="font-weight:400">255-option cap</td><td style="font-weight:400">Tested in the spike; pruning built in weeks 5 to 6</td></tr>
+<tr><td>C4</td><td style="font-weight:400">One request at a time, no memory, no text</td><td style="font-weight:400">Designed into the loop in weeks 3 to 4</td></tr>
+<tr><td>C5</td><td style="font-weight:400">Latency from India</td><td style="font-weight:400">Measured in week 1</td></tr>
+<tr><td>C6</td><td style="font-weight:400">macOS permission identity</td><td style="font-weight:400">Week 0 check; Python launch tested in week 1</td></tr>
+<tr><td>C7</td><td style="font-weight:400">Experimental Driver contract</td><td style="font-weight:400">Pinned in week 0; adapter built in weeks 3 to 4</td></tr>
+<tr><td>C8</td><td style="font-weight:400">Model alias drift</td><td style="font-weight:400">Pinned the day access arrives</td></tr>
+<tr><td>C9</td><td style="font-weight:400">Real-Mac blast radius and keys</td><td style="font-weight:400">Basic rules in weeks 5 to 6; hardened in phase D</td></tr>
+<tr><td>C10</td><td style="font-weight:400">Vendor numbers versus yours</td><td style="font-weight:400">Phases D and E</td></tr>
+<tr><td>C11</td><td style="font-weight:400">Licences and terms</td><td style="font-weight:400">Week 0</td></tr>
+<tr><td>C12</td><td style="font-weight:400">Voice as a second input channel</td><td style="font-weight:400">Interrupt point designed in weeks 3 to 4; risk-gate exception tested in phase D</td></tr>
+<tr><td>C13</td><td style="font-weight:400"><code>kev</code> is a stand-in, not Jev itself</td><td style="font-weight:400">Used for development only through phase C; every number in the final calibration table (phase D and E) is measured on real Jev</td></tr>
+</tbody>
+</table>
+</div>
+
+</main>
+</div>
+</body>
+</html>

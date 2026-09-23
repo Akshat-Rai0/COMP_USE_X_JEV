@@ -1,0 +1,249 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Project definition — Reflex Arc</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Big+Shoulders+Display:wght@800&amp;display=swap">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Atkinson+Hyperlegible:ital,wght@0,400;0,700;1,400&amp;display=swap">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Atkinson+Hyperlegible+Mono:wght@400&amp;display=swap">
+<style>
+:root{
+  --paper:#F1F3F5; --panel:#E4E8EC; --line:#C7CED6; --ink:#1D2733; --muted:#566272;
+  --reflex:#1F4FE0; --reflex-tint:#E1E8FD;
+  --planner:#9A5406; --planner-bar:#C77816; --planner-tint:#F9E9D0;
+  --verify:#0A7264; --verify-tint:#D4EEE9;
+  --body:#5A6676; --body-tint:#E0E5EA;
+  --alert:#B8242B; --alert-tint:#F7DDDE;
+  --display:"Big Shoulders Display","Avenir Next Condensed","Arial Narrow",system-ui,sans-serif;
+  --text:"Atkinson Hyperlegible","Avenir Next",system-ui,-apple-system,"Segoe UI",sans-serif;
+  --mono:"Atkinson Hyperlegible Mono",ui-monospace,"SF Mono",Menlo,Consolas,monospace;
+}
+*{box-sizing:border-box}
+html{color-scheme:light;scroll-padding-top:16px}
+body{margin:0;background:var(--paper);color:var(--ink);font:400 17px/1.62 var(--text);-webkit-font-smoothing:antialiased}
+.skip{position:absolute;left:-999px;top:0;background:var(--ink);color:#fff;padding:8px 12px;z-index:20}
+.skip:focus{left:0}
+:focus-visible{outline:3px solid var(--reflex);outline-offset:2px}
+
+/* page frame */
+.layout{display:grid;grid-template-columns:236px minmax(0,1fr);min-height:100vh}
+.rail{position:sticky;top:0;align-self:start;height:100vh;overflow:auto;padding:30px 22px;border-right:1px solid var(--line)}
+.rail .name{font:800 2rem/1 var(--display);letter-spacing:.01em}
+.rail .sub{margin:.3rem 0 1.6rem;color:var(--muted);font-size:.9rem}
+.rail nav a{display:block;padding:7px 0 7px 12px;border-left:3px solid transparent;color:var(--ink);text-decoration:none}
+.rail nav a:hover{text-decoration:underline}
+.rail nav a[aria-current="page"]{border-left-color:var(--ink);font-weight:700}
+.legend{margin-top:2rem;padding-top:1rem;border-top:1px solid var(--line);font-size:.9rem}
+.legend p{margin:0 0 .6rem;font-weight:700}
+.legend ul{list-style:none;margin:0;padding:0}
+.legend li{margin:0 0 .6rem;color:var(--muted);line-height:1.35}
+main{padding:46px 52px 90px;min-width:0}
+main>p,main>ul,main>ol,main>h2,main>h3,main>details,main>.note{max-width:72ch}
+
+/* type */
+h1{font:800 3.8rem/.95 var(--display);margin:0 0 1.1rem;letter-spacing:.005em}
+h2{font:800 2.1rem/1.05 var(--display);margin:3.2rem 0 .8rem;letter-spacing:.005em}
+h3{font:700 1.1rem/1.3 var(--text);margin:1.8rem 0 .4rem}
+p{margin:0 0 1rem}
+.lead{font-size:1.28rem;line-height:1.5;margin-bottom:1.6rem}
+a{color:var(--reflex)}
+ul,ol{padding-left:1.3rem;margin:0 0 1rem}
+li{margin-bottom:.35rem}
+code{font:400 .88em var(--mono);background:var(--panel);padding:.08em .35em;border-radius:3px}
+pre{font:400 .84rem/1.55 var(--mono);background:var(--panel);padding:16px 18px;overflow:auto;border-left:4px solid var(--body);margin:1rem 0;max-width:100%}
+pre code{background:none;padding:0;font-size:inherit}
+small,.muted{color:var(--muted)}
+
+/* layer tags: colour always paired with a word */
+.k{display:inline-flex;align-items:center;gap:.4em;font-weight:700;white-space:nowrap}
+.k::before{content:"";width:.68em;height:.68em;background:currentColor;flex:none}
+.k.reflex{color:var(--reflex)} .k.planner{color:var(--planner)} .k.verify{color:var(--verify)} .k.body{color:var(--body)}
+
+/* notes */
+.note{border-left:4px solid var(--body);padding:.5rem 0 .2rem 1.1rem;margin:1.6rem 0}
+.note.reflex{border-color:var(--reflex)} .note.planner{border-color:var(--planner)} .note.alert{border-color:var(--alert)} .note.verify{border-color:var(--verify)}
+
+/* tables */
+.scroll{overflow-x:auto;margin:1.2rem 0}
+table{border-collapse:collapse;width:100%;font-size:.94rem}
+th,td{padding:.6rem .85rem .6rem 0;border-bottom:1px solid var(--line);text-align:left;vertical-align:top}
+th{font-weight:700;border-bottom:2px solid var(--ink)}
+td ul{margin:0;padding-left:1.1rem}
+td li{margin-bottom:.3rem}
+td:first-child{font-weight:700}
+table.plain td:first-child{font-weight:400}
+
+/* details */
+details{border-top:1px solid var(--line);padding:.7rem 0;margin:0}
+details:last-of-type{border-bottom:1px solid var(--line)}
+summary{cursor:pointer;font-weight:700;padding:.15rem 0}
+details[open]>summary{margin-bottom:.6rem}
+
+/* numbered moves (a real sequence) */
+ol.moves{list-style:none;counter-reset:m;padding:0;margin:1.2rem 0;max-width:72ch}
+ol.moves>li{counter-increment:m;position:relative;padding:0 0 1.1rem 3.1rem;margin:0}
+ol.moves>li::before{content:counter(m);position:absolute;left:0;top:-.1rem;width:2.1rem;height:2.1rem;display:grid;place-items:center;font:800 1.15rem var(--display);color:#fff;background:var(--body)}
+ol.moves>li.reflex::before{background:var(--reflex)} ol.moves>li.planner::before{background:var(--planner)} ol.moves>li.verify::before{background:var(--verify)}
+
+figure{margin:1.6rem 0}
+figcaption{font-size:.9rem;color:var(--muted);margin-top:.5rem;max-width:72ch}
+
+@media (max-width:900px){
+  .layout{grid-template-columns:1fr}
+  .rail{position:static;height:auto;border-right:0;border-bottom:1px solid var(--line);padding:20px 22px}
+  .rail nav{display:flex;flex-wrap:wrap;gap:0 16px}
+  .legend{display:none}
+  main{padding:30px 22px 70px}
+  h1{font-size:3rem}
+}
+@media (prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important;scroll-behavior:auto!important}}
+ol.moves .k::before{display:none}
+
+</style>
+</head>
+<body>
+<a class="skip" href="#main">Skip to content</a>
+<div class="layout">
+<aside class="rail">
+  <div class="name">Reflex Arc</div>
+  <p class="sub">Working title. Rename freely.</p>
+  <nav aria-label="Project documents">
+    <a href="project_difination.html" aria-current="page">Project definition</a>
+    <a href="how_it_should_work.html">How it should work</a>
+    <a href="system-wiring.html">System wiring</a>
+    <a href="UI.html">UI</a>
+    <a href="roadmap.html">Roadmap</a>
+  </nav>
+  <div class="legend">
+    <p>The four layers</p>
+    <ul>
+      <li><span class="k body">Body</span><br>Cua Driver reads the screen and acts</li>
+      <li><span class="k reflex">Reflex</span><br>Jev picks the next control</li>
+      <li><span class="k planner">Planner</span><br>An LLM plans, writes text, and rescues</li>
+      <li><span class="k verify">Verify</span><br>Noul questions check the result</li>
+    </ul>
+  </div>
+</aside>
+<main id="main">
+<h1>Project definition</h1>
+<p class="lead">Reflex Arc is a macOS agent that operates real apps by splitting its thinking in two. A fast decision model handles each small step. A slower language model steps in only when the fast one is unsure.</p>
+
+<div class="note reflex">
+<p><strong>The analogy.</strong> Touch a hot pan and your hand pulls back before you have consciously decided anything. That is a spinal reflex: fast, narrow, and good at one job. Deliberate thinking happens in the cortex, and it only gets involved when the reflex has no good answer.</p>
+<p>Here <span class="k reflex">Jev</span> is the spine, the <span class="k planner">planner LLM</span> is the cortex, and <span class="k body">Cua Driver</span> is the eyes and hands. <span class="k verify">Noul</span> questions confirm that each move worked.</p>
+</div>
+
+<h2>The question this project answers</h2>
+<p>How much of a desktop agent's inner loop can a System One model handle alone, how fast and cheap is that in practice, and how often is it confidently wrong?</p>
+<p>TypeSafe publishes speed, cost, and calibration claims for Jev. This project tests them on one real desktop task and reports what it measures, not what the vendor reports.</p>
+
+<h2>Scope</h2>
+<div class="scroll">
+<table>
+<thead><tr><th style="width:38%">In scope</th><th style="width:31%">Out of scope</th><th>Stretch, only if ahead</th></tr></thead>
+<tbody><tr>
+<td style="font-weight:400"><ul>
+<li>macOS on Apple Silicon</li>
+<li>One hero task of at least 8 steps with at least one typed-in text value</li>
+<li>Cua Driver for reading and acting, run locally</li>
+<li>Jev for choosing controls and verifying results; an LLM for planning, text, and escalation</li>
+<li>Confidence gates, loop detection, hard budgets, human approval for risky actions</li>
+<li>A full trace of every run, with model and driver versions pinned</li>
+<li>A web run console, a demo video, and a README with measured numbers</li>
+</ul></td>
+<td style="font-weight:400"><ul>
+<li>Windows, Linux, and cloud desktops (Cua Fleets)</li>
+<li>Training or fine-tuning any model</li>
+<li>Sending screenshots to Jev (its published demos use text state)</li>
+<li>A general "do anything" agent</li>
+<li>Accounts, deployment, multiple users</li>
+</ul></td>
+<td style="font-weight:400"><ul>
+<li>The same task with an LLM-only decision backend, for head-to-head numbers</li>
+<li>A second hero task in a different app</li>
+<li>The hero task wrapped as a Cua Bench task</li>
+<li>A short technical write-up</li>
+</ul></td>
+</tr></tbody>
+</table>
+</div>
+
+<h2>The hero task</h2>
+<p>The hero task is chosen at the end of week 2, after the perception spike shows which apps expose a usable UI tree. Until then every example in these docs uses a sample task, <strong>create a reminder from a sentence</strong>, only to make things concrete.</p>
+<p>A task qualifies when all of these hold:</p>
+<ul>
+<li>The app exposes a usable UI element tree (checked in the spike)</li>
+<li>It takes at least 8 steps and needs at least one typed-in text value</li>
+<li>The end state can be checked by code, not only by Jev</li>
+<li>It is reversible inside the sandbox and touches no real account, money, or message</li>
+</ul>
+<details>
+<summary>Candidate tasks</summary>
+<div class="scroll">
+<table>
+<thead><tr><th>Candidate</th><th>Why it fits</th><th>Watch out for</th></tr></thead>
+<tbody>
+<tr><td>Reminders or Calendar entry from a sentence</td><td style="font-weight:400">Small forms and date pickers; easy end-state check</td><td style="font-weight:400">Pickers can be awkward to read from the UI tree</td></tr>
+<tr><td>Finder: sort a Downloads folder by rule</td><td style="font-weight:400">Many steps, visible result, a natural approval gate for moves and deletes</td><td style="font-weight:400">Drag and drop may not be reachable through the tree</td></tr>
+<tr><td>Two-app handoff: Notes text into a Mail draft (never sent)</td><td style="font-weight:400">Shows multi-app work</td><td style="font-weight:400">Mail is heavy; drafts only, never send</td></tr>
+</tbody>
+</table>
+</div>
+<p>Suggestion: run the spike on the first two and keep the third in reserve.</p>
+</details>
+
+<h2>How we will know it worked</h2>
+<div class="scroll">
+<table>
+<thead><tr><th>Measure</th><th>How it is measured</th><th>Target</th></tr></thead>
+<tbody>
+<tr><td>Task success</td><td style="font-weight:400">A code check of the real end state, over 20 consecutive runs, each from a fresh sandbox state</td><td style="font-weight:400">80% or better (starting hypothesis)</td></tr>
+<tr><td>Steps decided by Jev alone</td><td style="font-weight:400">Steps with no escalation divided by all steps</td><td style="font-weight:400">70% or better (starting hypothesis)</td></tr>
+<tr><td>Confident and wrong</td><td style="font-weight:400">Steps at or above the confidence gate where the chosen control was wrong, shown as a calibration table per confidence bucket</td><td style="font-weight:400">Reported, not targeted</td></tr>
+<tr><td>Decision latency</td><td style="font-weight:400">Round trip from this Mac to Jev per step, p50 and p95</td><td style="font-weight:400">Reported. No target until week 2 measurements exist</td></tr>
+<tr><td>Cost per successful run</td><td style="font-weight:400">Jev and LLM spend, logged per step</td><td style="font-weight:400">Reported, next to an LLM-only run of the same task if the stretch goal happens</td></tr>
+</tbody>
+</table>
+</div>
+<p>Targets marked hypothesis are revised after the week 2 baseline. The point is honest numbers, including bad ones.</p>
+
+<h2>Deliverables</h2>
+<ul>
+<li>A public repo with a README that states measured numbers and a failure analysis</li>
+<li>A demo video of about 90 seconds: screen recording beside the live trace</li>
+<li>The run console (see <a href="UI.html">UI</a>)</li>
+<li>These five docs, kept current, under <code>/docs</code></li>
+<li>One resume bullet that uses only numbers from your own runs</li>
+</ul>
+
+<h2>Constraints and assumptions</h2>
+<ul>
+<li>Solo, about 12 weeks from Sep 28 to Dec 20, with a reduced-hours window from Nov 9 to Nov 25 (see <a href="roadmap.html">Roadmap</a>).</li>
+<li>Jev is in early access, so access on day one is not guaranteed.</li>
+<li>Everything runs locally on an Apple Silicon Mac except the Jev and LLM API calls.</li>
+<li>Jev's speed and cost figures are the vendor's own, measured from the US. This project measures them from India.</li>
+<li>The agent never touches a real account, money, or message.</li>
+</ul>
+
+<h2>Decisions still open</h2>
+<div class="scroll">
+<table>
+<thead><tr><th>ID</th><th>Decision</th><th>Options</th><th>Decide by</th></tr></thead>
+<tbody>
+<tr><td>D1</td><td style="font-weight:400">Hero task</td><td style="font-weight:400">The candidates above</td><td style="font-weight:400">End of week 2 (Oct 11)</td></tr>
+<tr><td>D2</td><td style="font-weight:400">How the orchestrator talks to the Driver</td><td style="font-weight:400">Python SDK (<code>cua_driver</code>) or CLI (<code>cua-driver call</code>)</td><td style="font-weight:400">Week 2</td></tr>
+<tr><td>D3</td><td style="font-weight:400">Sandbox</td><td style="font-weight:400">Dedicated macOS user with an app allowlist now; a Lume VM later if the Driver can run inside it</td><td style="font-weight:400">Revisit week 4; final in weeks 9 and 10</td></tr>
+<tr><td>D4</td><td style="font-weight:400">Planner and text LLM</td><td style="font-weight:400">Any vision-capable model on OpenRouter, picked by cost and screenshot accuracy</td><td style="font-weight:400">Week 3</td></tr>
+<tr><td>D5</td><td style="font-weight:400">Console frontend</td><td style="font-weight:400">Plain HTML and JS, or React</td><td style="font-weight:400">Week 10</td></tr>
+<tr><td>D6</td><td style="font-weight:400">When to stop developing against <code>kev</code> and switch the default backend to real Jev</td><td style="font-weight:400">As soon as Jev access arrives; <code>kev</code> stays available afterward only as a free offline fallback for demos</td><td style="font-weight:400">Whenever Jev access is granted, target no later than week 9</td></tr>
+</tbody>
+</table>
+</div>
+
+</main>
+</div>
+</body>
+</html>

@@ -1,0 +1,378 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>System wiring — Reflex Arc</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Big+Shoulders+Display:wght@800&amp;display=swap">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Atkinson+Hyperlegible:ital,wght@0,400;0,700;1,400&amp;display=swap">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Atkinson+Hyperlegible+Mono:wght@400&amp;display=swap">
+<style>
+:root{
+  --paper:#F1F3F5; --panel:#E4E8EC; --line:#C7CED6; --ink:#1D2733; --muted:#566272;
+  --reflex:#1F4FE0; --reflex-tint:#E1E8FD;
+  --planner:#9A5406; --planner-bar:#C77816; --planner-tint:#F9E9D0;
+  --verify:#0A7264; --verify-tint:#D4EEE9;
+  --body:#5A6676; --body-tint:#E0E5EA;
+  --alert:#B8242B; --alert-tint:#F7DDDE;
+  --display:"Big Shoulders Display","Avenir Next Condensed","Arial Narrow",system-ui,sans-serif;
+  --text:"Atkinson Hyperlegible","Avenir Next",system-ui,-apple-system,"Segoe UI",sans-serif;
+  --mono:"Atkinson Hyperlegible Mono",ui-monospace,"SF Mono",Menlo,Consolas,monospace;
+}
+*{box-sizing:border-box}
+html{color-scheme:light;scroll-padding-top:16px}
+body{margin:0;background:var(--paper);color:var(--ink);font:400 17px/1.62 var(--text);-webkit-font-smoothing:antialiased}
+.skip{position:absolute;left:-999px;top:0;background:var(--ink);color:#fff;padding:8px 12px;z-index:20}
+.skip:focus{left:0}
+:focus-visible{outline:3px solid var(--reflex);outline-offset:2px}
+
+/* page frame */
+.layout{display:grid;grid-template-columns:236px minmax(0,1fr);min-height:100vh}
+.rail{position:sticky;top:0;align-self:start;height:100vh;overflow:auto;padding:30px 22px;border-right:1px solid var(--line)}
+.rail .name{font:800 2rem/1 var(--display);letter-spacing:.01em}
+.rail .sub{margin:.3rem 0 1.6rem;color:var(--muted);font-size:.9rem}
+.rail nav a{display:block;padding:7px 0 7px 12px;border-left:3px solid transparent;color:var(--ink);text-decoration:none}
+.rail nav a:hover{text-decoration:underline}
+.rail nav a[aria-current="page"]{border-left-color:var(--ink);font-weight:700}
+.legend{margin-top:2rem;padding-top:1rem;border-top:1px solid var(--line);font-size:.9rem}
+.legend p{margin:0 0 .6rem;font-weight:700}
+.legend ul{list-style:none;margin:0;padding:0}
+.legend li{margin:0 0 .6rem;color:var(--muted);line-height:1.35}
+main{padding:46px 52px 90px;min-width:0}
+main>p,main>ul,main>ol,main>h2,main>h3,main>details,main>.note{max-width:72ch}
+
+/* type */
+h1{font:800 3.8rem/.95 var(--display);margin:0 0 1.1rem;letter-spacing:.005em}
+h2{font:800 2.1rem/1.05 var(--display);margin:3.2rem 0 .8rem;letter-spacing:.005em}
+h3{font:700 1.1rem/1.3 var(--text);margin:1.8rem 0 .4rem}
+p{margin:0 0 1rem}
+.lead{font-size:1.28rem;line-height:1.5;margin-bottom:1.6rem}
+a{color:var(--reflex)}
+ul,ol{padding-left:1.3rem;margin:0 0 1rem}
+li{margin-bottom:.35rem}
+code{font:400 .88em var(--mono);background:var(--panel);padding:.08em .35em;border-radius:3px}
+pre{font:400 .84rem/1.55 var(--mono);background:var(--panel);padding:16px 18px;overflow:auto;border-left:4px solid var(--body);margin:1rem 0;max-width:100%}
+pre code{background:none;padding:0;font-size:inherit}
+small,.muted{color:var(--muted)}
+
+/* layer tags: colour always paired with a word */
+.k{display:inline-flex;align-items:center;gap:.4em;font-weight:700;white-space:nowrap}
+.k::before{content:"";width:.68em;height:.68em;background:currentColor;flex:none}
+.k.reflex{color:var(--reflex)} .k.planner{color:var(--planner)} .k.verify{color:var(--verify)} .k.body{color:var(--body)}
+
+/* notes */
+.note{border-left:4px solid var(--body);padding:.5rem 0 .2rem 1.1rem;margin:1.6rem 0}
+.note.reflex{border-color:var(--reflex)} .note.planner{border-color:var(--planner)} .note.alert{border-color:var(--alert)} .note.verify{border-color:var(--verify)}
+
+/* tables */
+.scroll{overflow-x:auto;margin:1.2rem 0}
+table{border-collapse:collapse;width:100%;font-size:.94rem}
+th,td{padding:.6rem .85rem .6rem 0;border-bottom:1px solid var(--line);text-align:left;vertical-align:top}
+th{font-weight:700;border-bottom:2px solid var(--ink)}
+td ul{margin:0;padding-left:1.1rem}
+td li{margin-bottom:.3rem}
+td:first-child{font-weight:700}
+table.plain td:first-child{font-weight:400}
+
+/* details */
+details{border-top:1px solid var(--line);padding:.7rem 0;margin:0}
+details:last-of-type{border-bottom:1px solid var(--line)}
+summary{cursor:pointer;font-weight:700;padding:.15rem 0}
+details[open]>summary{margin-bottom:.6rem}
+
+/* numbered moves (a real sequence) */
+ol.moves{list-style:none;counter-reset:m;padding:0;margin:1.2rem 0;max-width:72ch}
+ol.moves>li{counter-increment:m;position:relative;padding:0 0 1.1rem 3.1rem;margin:0}
+ol.moves>li::before{content:counter(m);position:absolute;left:0;top:-.1rem;width:2.1rem;height:2.1rem;display:grid;place-items:center;font:800 1.15rem var(--display);color:#fff;background:var(--body)}
+ol.moves>li.reflex::before{background:var(--reflex)} ol.moves>li.planner::before{background:var(--planner)} ol.moves>li.verify::before{background:var(--verify)}
+
+figure{margin:1.6rem 0}
+figcaption{font-size:.9rem;color:var(--muted);margin-top:.5rem;max-width:72ch}
+
+@media (max-width:900px){
+  .layout{grid-template-columns:1fr}
+  .rail{position:static;height:auto;border-right:0;border-bottom:1px solid var(--line);padding:20px 22px}
+  .rail nav{display:flex;flex-wrap:wrap;gap:0 16px}
+  .legend{display:none}
+  main{padding:30px 22px 70px}
+  h1{font-size:3rem}
+}
+@media (prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important;scroll-behavior:auto!important}}
+ol.moves .k::before{display:none}
+
+</style>
+</head>
+<body>
+<a class="skip" href="#main">Skip to content</a>
+<div class="layout">
+<aside class="rail">
+  <div class="name">Reflex Arc</div>
+  <p class="sub">Working title. Rename freely.</p>
+  <nav aria-label="Project documents">
+    <a href="project_difination.html">Project definition</a>
+    <a href="how_it_should_work.html">How it should work</a>
+    <a href="system-wiring.html" aria-current="page">System wiring</a>
+    <a href="UI.html">UI</a>
+    <a href="roadmap.html">Roadmap</a>
+  </nav>
+  <div class="legend">
+    <p>The four layers</p>
+    <ul>
+      <li><span class="k body">Body</span><br>Cua Driver reads the screen and acts</li>
+      <li><span class="k reflex">Reflex</span><br>Jev picks the next control</li>
+      <li><span class="k planner">Planner</span><br>An LLM plans, writes text, and rescues</li>
+      <li><span class="k verify">Verify</span><br>Noul questions check the result</li>
+    </ul>
+  </div>
+</aside>
+<main id="main">
+<style>
+.wiring{min-width:760px;width:100%;height:auto;display:block;background:#fff;border:1px solid var(--line)}
+.wiring text{font-family:var(--text);fill:var(--ink)}
+.wiring .t{font-size:14px;font-weight:700}
+.wiring .s{font-size:12.5px}
+.wiring .a{font-size:11px;fill:var(--muted)}
+.wiring .z{font-size:12.5px;font-weight:700;fill:var(--muted)}
+.wiring .flow{stroke:var(--ink);stroke-width:1.6;fill:none}
+</style>
+
+<h1>System wiring</h1>
+<p class="lead">One Python orchestrator owns the loop, the keys, and the trace. It talks to the Body inside a sandbox, to a swappable decision backend, and to a planner LLM.</p>
+
+<figure>
+<div class="scroll">
+<svg class="wiring" viewBox="0 0 960 660" role="img" aria-labelledby="wt wd">
+<title id="wt">System wiring diagram</title>
+<desc id="wd">The Cua Driver in a sandbox sends the UI tree to the state serializer. The loop controller sends state and questions to the decision backend, which is Jev, a local kev server, or an LLM adapter, and gets typed answers back. Gates escalate to the planner LLM and send actions to the Driver. A trace writer feeds the run console and the trace store. A push-to-talk voice input box, running locally, writes transcripts into a small queue that the loop controller drains once per step, either starting a new task or sending a correction to the planner; it never calls the Driver or the gates directly.</desc>
+<defs>
+<marker id="ah" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="#1D2733"/></marker>
+</defs>
+
+<!-- boundaries -->
+<rect x="14" y="10" width="250" height="214" rx="6" fill="none" stroke="#5A6676" stroke-width="1.5" stroke-dasharray="6 4"/>
+<text class="z" x="26" y="30">Sandbox: dedicated macOS user</text>
+<text class="a" x="26" y="317">Not sandboxed: local to this Mac</text>
+<rect x="334" y="10" width="300" height="640" rx="6" fill="none" stroke="#1D2733" stroke-width="1.5" stroke-dasharray="6 4"/>
+<text class="z" x="346" y="30" style="fill:#1D2733">Orchestrator: one Python process</text>
+<text class="a" x="346" y="52">Holds every API key.</text>
+<text class="a" x="346" y="69">Nothing in the sandbox has one.</text>
+<text class="z" x="704" y="30">External APIs over the network</text>
+
+<!-- flows -->
+<line class="flow" x1="139" y1="98" x2="139" y2="130" marker-start="url(#ah)" marker-end="url(#ah)"/>
+<text class="a" x="149" y="118">reads and controls</text>
+
+<line class="flow" x1="254" y1="158" x2="344" y2="158" marker-end="url(#ah)"/>
+<text class="a" x="299" y="140" text-anchor="middle">UI tree +</text>
+<text class="a" x="299" y="152" text-anchor="middle">screenshot</text>
+
+<polyline class="flow" points="344,510 279,510 279,196 254,196" marker-end="url(#ah)"/>
+<rect x="256" y="252" width="70" height="30" fill="var(--paper,#F1F3F5)"/>
+<text class="a" x="271" y="264" text-anchor="end">action by</text>
+<text class="a" x="271" y="277" text-anchor="end">element id</text>
+
+<!-- Voice input flows straight into the Loop controller only -->
+<line class="flow" x1="254" y1="367" x2="344" y2="367" marker-end="url(#ah)"/>
+<text class="a" x="299" y="349" text-anchor="middle">transcript:</text>
+<text class="a" x="299" y="361" text-anchor="middle">new task or</text>
+<text class="a" x="299" y="386" text-anchor="middle">correction</text>
+
+<line class="flow" x1="484" y1="214" x2="484" y2="330" marker-end="url(#ah)"/>
+<text class="a" x="494" y="275">numbered elements</text>
+
+<line class="flow" x1="624" y1="356" x2="704" y2="356" marker-end="url(#ah)"/>
+<text class="a" x="669" y="338" text-anchor="middle">state +</text>
+<text class="a" x="669" y="350" text-anchor="middle">questions</text>
+
+<line class="flow" x1="704" y1="450" x2="624" y2="450" marker-end="url(#ah)"/>
+<text class="a" x="669" y="434" text-anchor="middle">answers +</text>
+<text class="a" x="669" y="466" text-anchor="middle">confidence</text>
+
+<line class="flow" x1="484" y1="414" x2="484" y2="460" marker-end="url(#ah)"/>
+<text class="a" x="494" y="441">element + confidence</text>
+
+<line class="flow" x1="624" y1="530" x2="704" y2="530" marker-end="url(#ah)"/>
+<text class="a" x="669" y="512" text-anchor="middle">escalate:</text>
+<text class="a" x="669" y="524" text-anchor="middle">state, shot</text>
+
+<line class="flow" x1="704" y1="550" x2="624" y2="550" marker-end="url(#ah)"/>
+<text class="a" x="669" y="566" text-anchor="middle">pick, text,</text>
+<text class="a" x="669" y="578" text-anchor="middle">or plan</text>
+
+<line class="flow" x1="484" y1="554" x2="484" y2="580" marker-end="url(#ah)"/>
+<text class="a" x="494" y="571">every step</text>
+
+<line class="flow" x1="344" y1="607" x2="254" y2="607" marker-end="url(#ah)"/>
+<text class="a" x="299" y="599" text-anchor="middle">live events</text>
+
+<line class="flow" x1="624" y1="607" x2="704" y2="607" marker-end="url(#ah)"/>
+<text class="a" x="669" y="599" text-anchor="middle">StepRecord</text>
+
+<!-- Body -->
+<rect x="24" y="44" width="230" height="54" fill="#E0E5EA" stroke="#5A6676" stroke-width="1.6"/>
+<text class="t" x="34" y="66">Target apps</text>
+<text class="s" x="34" y="86">Reminders, Finder, and so on</text>
+
+<rect x="24" y="130" width="230" height="84" fill="#E0E5EA" stroke="#5A6676" stroke-width="1.6"/>
+<text class="t" x="34" y="152" style="fill:#5A6676">Cua Driver</text>
+<text class="s" x="34" y="172">CuaDriver.app daemon</text>
+<text class="s" x="34" y="188">reads UI tree and screenshot</text>
+<text class="s" x="34" y="204">clicks, types, presses keys</text>
+
+<!-- Voice input, local to this Mac, not part of the Cua sandbox -->
+<rect x="24" y="330" width="230" height="74" fill="#fff" stroke="#1F4FE0" stroke-width="1.6" stroke-dasharray="4 3"/>
+<text class="t" x="34" y="352" style="fill:#1F4FE0">Voice input, local</text>
+<text class="s" x="34" y="372">Push-to-talk + mlx-whisper</text>
+<text class="s" x="34" y="388">queues a transcript; drained</text>
+<text class="s" x="34" y="398" style="font-size:11px">once per loop iteration, never mid-step</text>
+
+<!-- Orchestrator internals -->
+<rect x="344" y="130" width="280" height="84" fill="#fff" stroke="#1D2733" stroke-width="1.6"/>
+<text class="t" x="354" y="152">State serializer</text>
+<text class="s" x="354" y="172">UI tree to numbered elements</text>
+<text class="s" x="354" y="188">e17 button "Add reminder"</text>
+<text class="s" x="354" y="204">pruned to at most 255</text>
+
+<rect x="344" y="330" width="280" height="84" fill="#fff" stroke="#1D2733" stroke-width="1.6"/>
+<text class="t" x="354" y="352">Loop controller</text>
+<text class="s" x="354" y="372">LangGraph state machine</text>
+<text class="s" x="354" y="388">drains voice queue each step</text>
+<text class="s" x="354" y="404">one Jev request per step</text>
+
+<rect x="344" y="460" width="280" height="94" fill="#fff" stroke="#1D2733" stroke-width="1.6"/>
+<text class="t" x="354" y="482">Gates</text>
+<text class="s" x="354" y="500">confidence, top-two gap, risk rules</text>
+<text class="s" x="354" y="516">approval is a human interrupt</text>
+<text class="s" x="354" y="532" style="fill:#1F4FE0">voice may redirect, never approve</text>
+<text class="s" x="354" y="548" style="font-size:11px">loop breaker on repeated screens</text>
+
+<rect x="344" y="580" width="280" height="54" fill="#fff" stroke="#1D2733" stroke-width="1.6"/>
+<text class="t" x="354" y="602">Trace writer</text>
+<text class="s" x="354" y="621">one StepRecord per step</text>
+
+<rect x="24" y="580" width="230" height="54" fill="#fff" stroke="#1D2733" stroke-width="1.6"/>
+<text class="t" x="34" y="602">Run console</text>
+<text class="s" x="34" y="621">FastAPI, WebSocket, browser</text>
+
+<!-- Decision backend -->
+<rect x="704" y="292" width="236" height="200" fill="#fff" stroke="#1F4FE0" stroke-width="1.6"/>
+<text class="t" x="714" y="310" style="fill:#1F4FE0">Decision backend</text>
+<rect x="714" y="318" width="216" height="58" fill="#E1E8FD" stroke="#1F4FE0" stroke-width="1.6"/>
+<text class="t" x="722" y="334" style="fill:#1F4FE0">Jev</text>
+<text class="s" x="722" y="350">Choice: which control next</text>
+<text class="s" x="722" y="366" style="fill:#0A7264;font-weight:700">Noul: did it work, is it done</text>
+<rect x="714" y="384" width="216" height="38" fill="#F0F4FE" stroke="#1F4FE0" stroke-width="1.6" stroke-dasharray="5 3"/>
+<text class="s" x="722" y="399" style="font-weight:700">kev, local dev stand-in</text>
+<text class="s" x="722" y="413" style="font-size:11px">same /v1/systemone contract</text>
+<rect x="714" y="430" width="216" height="52" fill="#fff" stroke="#1F4FE0" stroke-width="1.6" stroke-dasharray="5 3"/>
+<text class="s" x="722" y="447">LLM with typed-answer adapter</text>
+<text class="s" x="722" y="463">fallback and baseline</text>
+
+<!-- Planner -->
+<rect x="704" y="510" width="236" height="60" fill="#F9E9D0" stroke="#9A5406" stroke-width="1.6"/>
+<text class="t" x="714" y="530" style="fill:#9A5406">Planner and text LLM</text>
+<text class="s" x="714" y="546">via OpenRouter</text>
+<text class="s" x="714" y="560">plans, writes text, rescues</text>
+
+<!-- Trace store -->
+<rect x="704" y="580" width="236" height="54" fill="#fff" stroke="#1D2733" stroke-width="1.6"/>
+<text class="t" x="714" y="602">Trace store</text>
+<text class="s" x="714" y="621">SQLite and screenshot files</text>
+</svg>
+</div>
+<figcaption>After every action the cycle restarts at the Driver. The Noul questions in the next pass are the check on the last action.</figcaption>
+</figure>
+
+<h2>Interfaces</h2>
+<div class="scroll">
+<table>
+<thead><tr><th>Boundary</th><th>Goes in</th><th>Comes out</th><th>If it fails</th></tr></thead>
+<tbody>
+<tr><td>Voice input to controller</td><td style="font-weight:400">Nothing; the controller only reads from a small queue the mic thread writes to</td><td style="font-weight:400">A transcript, checked once at the top of every loop iteration, never mid-step</td><td style="font-weight:400">A stale or empty transcript is dropped silently; the loop continues on schedule regardless</td></tr>
+<tr><td>Controller and Driver</td><td style="font-weight:400">A read request for the front window; an action: click, type, or press on an element</td><td style="font-weight:400">UI tree, window screenshot, action result</td><td style="font-weight:400">Retry once, then stop the run and keep the trace</td></tr>
+<tr><td>Driver output to serializer</td><td style="font-weight:400">The raw UI tree (exact fields confirmed in the week 1 spike)</td><td style="font-weight:400">Up to 255 numbered elements and a screen hash</td><td style="font-weight:400">If the tree is empty or tiny, mark the step "needs vision" and escalate</td></tr>
+<tr><td>Controller to decision backend</td><td style="font-weight:400">State text and typed questions: Choice, Noul, optionally Score</td><td style="font-weight:400">Typed answers with probabilities, plus confidence for Choice and Score</td><td style="font-weight:400">Timeout, one retry, then escalate to the planner</td></tr>
+<tr><td>Gates to planner LLM</td><td style="font-weight:400">Task, current plan step, candidate elements, screenshot</td><td style="font-weight:400">One candidate id, "none", or a text value</td><td style="font-weight:400">On "none" or an error, pause for a human</td></tr>
+<tr><td>Controller to trace writer</td><td style="font-weight:400">One StepRecord per step</td><td style="font-weight:400">A SQLite row and files on disk</td><td style="font-weight:400">Never blocks the loop; failures are logged loudly</td></tr>
+<tr><td>Trace writer to console</td><td style="font-weight:400">Live events over WebSocket</td><td style="font-weight:400">Timeline and step inspector</td><td style="font-weight:400">The console is optional; a run never depends on it</td></tr>
+</tbody>
+</table>
+</div>
+
+<h2>What one step records</h2>
+<details>
+<summary>StepRecord, a proposed shape</summary>
+<p>Field names are a proposal. Every model and driver version is recorded as an exact string, never as "latest". <code>backend</code> is <code>"jev"</code>, <code>"kev"</code>, or <code>"llm"</code>, whichever answered this step. <code>interrupt</code> is <code>null</code> on almost every step; it is only set to <code>{"source": "voice", "transcript": "..."}</code> on the one step where a queued correction was drained and applied.</p>
+<pre><code>{
+  "run_id": "r-0007",
+  "step": 4,
+  "screen_hash": "...",
+  "observe_ms": 200,
+  "backend": "jev",
+  "backend_model_version": "&lt;exact pinned string&gt;",
+  "driver_release": "&lt;pinned release&gt;",
+  "questions": ["next_element", "goal_reached", "error_visible", "last_action_worked"],
+  "choice": {
+    "options": 31,
+    "top": "e112",
+    "probabilities": {"e112": 0.44, "e113": 0.31},
+    "confidence": 0.52
+  },
+  "noul": {"goal_reached": 0.04, "error_visible": 0.01, "last_action_worked": 0.97},
+  "gate": {"confidence_ok": false, "gap_ok": false, "risky": false},
+  "interrupt": null,
+  "decided_by": "llm",
+  "action": {"kind": "click", "element": "e112"},
+  "act_ms": 220,
+  "llm_calls": [{"purpose": "escalate", "model": "&lt;id&gt;", "ms": 1880, "usd": null}],
+  "usd_total": null,
+  "screenshot": "runs/r-0007/step-04.png"
+}</code></pre>
+</details>
+
+<h2>Tech choices</h2>
+<div class="scroll">
+<table>
+<thead><tr><th>Piece</th><th>Choice</th><th>Why</th></tr></thead>
+<tbody>
+<tr><td>Orchestrator</td><td style="font-weight:400">Python 3.12 with LangGraph</td><td style="font-weight:400">An explicit state machine; approval gates map to interrupts</td></tr>
+<tr><td>Driver access</td><td style="font-weight:400">Python SDK or CLI, decided in week 2 (D2)</td><td style="font-weight:400">Either sits behind a small <code>Body</code> adapter, so the choice is reversible</td></tr>
+<tr><td>Decision backend</td><td style="font-weight:400">A <code>DecisionBackend</code> interface with <code>JevBackend</code>, <code>LLMBackend</code>, and, while waiting on Jev access, <code>KevBackend</code> as a local Choice/Noul/Score stand-in</td><td style="font-weight:400">Covers the access risk (C1) and gives a free baseline. kev speaks the exact <code>POST /v1/systemone</code> shape, so TypeSafe's own SDK works against it with only a <code>base_url</code> change — swapping to real Jev later needs no adapter rewrite, only a URL and a key</td></tr>
+<tr><td>Planner and text</td><td style="font-weight:400">A vision-capable model on OpenRouter</td><td style="font-weight:400">One key, many models, swapped by config</td></tr>
+<tr><td>Storage</td><td style="font-weight:400">SQLite and screenshot files</td><td style="font-weight:400">No server; easy to query for the calibration table</td></tr>
+<tr><td>Console</td><td style="font-weight:400">FastAPI and WebSocket; frontend chosen in week 10 (D5)</td><td style="font-weight:400">Keeps the backend small; the frontend can be plain HTML</td></tr>
+<tr><td>Voice input</td><td style="font-weight:400">Push-to-talk, transcribed locally with <code>mlx-whisper</code></td><td style="font-weight:400">Runs on Apple Silicon with no cloud call; writes only to a queue the loop controller drains, so it needs no lock around the gates or the decision backend</td></tr>
+<tr><td>Tests</td><td style="font-weight:400">pytest with a fake Body and a fake backend, plus record and replay</td><td style="font-weight:400">Tests gates and loop logic without API cost or a real Mac</td></tr>
+</tbody>
+</table>
+</div>
+
+<h2>Caveats found in the architecture check</h2>
+<p>These are the things most likely to bite later. The <a href="roadmap.html">Roadmap</a> says which week resolves each one.</p>
+<div class="scroll">
+<table>
+<thead><tr><th>ID</th><th>Caveat</th><th>What the wiring does about it</th></tr></thead>
+<tbody>
+<tr><td>C1</td><td style="font-weight:400"><strong>Jev is early access with a waitlist.</strong> No key means no project.</td><td style="font-weight:400">The decision backend is an interface with three implementations: Jev; <code>kev</code> (jaredpalmer/kev), a small pre-trained local model that serves the identical <code>POST /v1/systemone</code> contract, so TypeSafe's own SDK works against it with only a <code>base_url</code> change; and an LLM wrapped to return the same typed answers. Everything else can be built, and the full loop tested end to end, before Jev access arrives.</td></tr>
+<tr><td>C2</td><td style="font-weight:400"><strong>Jev's published demos take text state, not images.</strong> The Driver must yield a usable UI tree, and some apps expose very little.</td><td style="font-weight:400">A week 1 to 2 spike rates candidate apps. Screenshots go only to the planner fallback. Cua's licence notes mention OmniParser and an optional <code>cua-agent[omni]</code> extra that includes an AGPL-licensed dependency, so avoid it unless truly needed.</td></tr>
+<tr><td>C3</td><td style="font-weight:400"><strong>A Choice question covers at most 255 options.</strong> Real UI trees are larger.</td><td style="font-weight:400">The serializer prunes and ranks. Score questions are one way to rank; the per-request question limit needs confirming. Beyond 255, use the two-stage approach TypeSafe describes: score, then choose.</td></tr>
+<tr><td>C4</td><td style="font-weight:400"><strong>Jev answers one request at a time, remembers nothing, and cannot write text.</strong></td><td style="font-weight:400">The controller puts a short history into each state. Planning and typed values stay with the LLM.</td></tr>
+<tr><td>C5</td><td style="font-weight:400"><strong>Speed claims come from TypeSafe's US West Coast laptops.</strong> A round trip from Patna will be longer.</td><td style="font-weight:400">Measure p50 and p95 in week 1. Pack all questions for a step into one request. Set a per-call timeout.</td></tr>
+<tr><td>C6</td><td style="font-weight:400"><strong>macOS grants Accessibility and Screen Recording to an app identity, not a file path.</strong> Cua documents a raw driver daemon started outside <code>CuaDriver.app</code> as unsupported.</td><td style="font-weight:400">Use the installed <code>CuaDriver.app</code> and its daemon. Never grant permissions to loose binaries. Run <code>cua-driver doctor</code> in week 0 and test launching from Python in week 1.</td></tr>
+<tr><td>C7</td><td style="font-weight:400"><strong>The Driver's SDK contract is marked experimental and the repo moves fast.</strong></td><td style="font-weight:400">Pin the Cua release, hide every call behind the <code>Body</code> adapter, and test the loop against a fake Body.</td></tr>
+<tr><td>C8</td><td style="font-weight:400"><strong>Model aliases can drift.</strong> "Latest" may change behaviour between runs.</td><td style="font-weight:400">Pin the exact Jev version string, store it in every StepRecord, and rerun the baseline if it changes.</td></tr>
+<tr><td>C9</td><td style="font-weight:400"><strong>The agent controls a real Mac and holds API keys.</strong></td><td style="font-weight:400">Sandbox user, app allowlist, approval gate, kill switch, hard budgets. Keys live only in the orchestrator.</td></tr>
+<tr><td>C10</td><td style="font-weight:400"><strong>Vendor numbers are not your numbers.</strong> TypeSafe's speed and accuracy figures come from its own evaluations.</td><td style="font-weight:400">Measure on the hero task, publish the calibration table, and judge final success by a code check, not by Jev.</td></tr>
+<tr><td>C11</td><td style="font-weight:400"><strong>Licences and terms.</strong> Cua is MIT, but extras have other licences. TypeSafe's terms on publishing benchmark results are unread.</td><td style="font-weight:400">Read the terms in week 0. Keep AGPL extras out of the repo.</td></tr>
+<tr><td>C12</td><td style="font-weight:400"><strong>Voice is a second input channel that can reach a running loop.</strong> If it is read at the wrong moment it could apply a correction mid-action, or a spoken phrase could be mistaken for approval of a risky action.</td><td style="font-weight:400">The mic thread only writes to a queue; the loop controller drains it at one fixed point, between the check and the next decide, never mid-step. The risk gate is a fixed rule in code that voice cannot satisfy: a risky action always needs a UI click, whatever the transcript says.</td></tr>
+<tr><td>C13</td><td style="font-weight:400"><strong>kev is a 0.5B-parameter stand-in, not a copy of Jev.</strong> Its own evaluation shows it is untrained on tasks far from passage classification, its context caps at 8,192 tokens against Jev's roughly 32k per branch, and it can lose to Jev on knowledge-heavy picks (its own example: choosing <code>return_policy</code> over <code>return_status</code>). It is also a single-author project with no fine-tuning applied for this project's task.</td><td style="font-weight:400">Treat kev as a development and testing stand-in only, never as the number reported in the final calibration table. Every number that matters for the write-up is measured on real Jev once access arrives. If kev's accuracy on the actual UI-tree Choice questions looks weak in the week 1 to 2 spike, its own training recipe is a documented stretch goal, not a requirement.</td></tr>
+</tbody>
+</table>
+</div>
+
+</main>
+</div>
+</body>
+</html>
