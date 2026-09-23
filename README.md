@@ -165,7 +165,7 @@ git clone https://github.com/jaredpalmer/kev.git
 cd kev
 # Download the kev-0.5b release weights
 # Start the local server:
-# kev serve --model kev-0.5b --port 8741
+# kev serve --model kev-0.5b --port 8009
 
 # 5. Get an OpenRouter key
 #    https://openrouter.ai → create account → generate API key
@@ -174,7 +174,7 @@ cd kev
 cp .env.example .env
 # Fill in:
 #   OPENROUTER_API_KEY=or-...
-#   KEV_BASE_URL=http://localhost:8741
+#   KEV_BASE_URL=http://localhost:8009
 #   JEV_API_KEY=           # leave empty until access arrives
 #   DECISION_BACKEND=kev   # "kev", "jev", or "llm"
 
@@ -197,7 +197,7 @@ Before anything else, confirm you have:
 
 - [ ] **An Apple Silicon Mac** (M1/M2/M3/M4) — this project is macOS-only
 - [ ] **macOS 13 (Ventura) or later** — required for Cua Driver's accessibility APIs
-- [ ] **Python 3.12** — the orchestrator is pinned to this version
+- [ ] **Python 3.12** — the orchestrator is pinned to this version (3.13 is incompatible with mlx-whisper)
   ```bash
   python3 --version
   # Should show Python 3.12.x
@@ -307,18 +307,20 @@ Jev is the fast decision model from TypeSafe. It is in **early access with a wai
 git clone https://github.com/jaredpalmer/kev.git
 cd kev
 
-# Download the kev-0.5b model release
-# (Check the GitHub releases page for the latest download link)
-# Example:
-# wget https://github.com/jaredpalmer/kev/releases/download/v0.1.0/kev-0.5b.bin
+# Install dependencies using uv (required)
+uv sync --extra serve
+
+# Download kev-0.5b weights from GitHub release v0.1.0
+# https://github.com/jaredpalmer/kev/releases/download/v0.1.0/kev-0.5b.tar.gz
+# Extract to runs/kev/ directory in the kev repo
 
 # Start the local server
-kev serve --model kev-0.5b --port 8741
+uv run --extra serve python -m kev.serve --run jaredpalmer/kev-0.5b --port 8009
 ```
 
 Verify it's running:
 ```bash
-curl http://localhost:8741/v1/systemone \
+curl http://localhost:8009/v1/systemone \
   -X POST \
   -H "Content-Type: application/json" \
   -d '{"state": "test", "questions": [{"type": "noul", "name": "test", "statement": "The sky is blue"}]}'
@@ -358,7 +360,7 @@ Fill in:
 DECISION_BACKEND=kev          # "kev" (local), "jev" (remote), or "llm" (adapter)
 
 # ─── kev (local stand-in) ───
-KEV_BASE_URL=http://localhost:8741
+KEV_BASE_URL=http://localhost:8009
 
 # ─── Jev (fill in when access arrives) ───
 JEV_API_KEY=
@@ -384,7 +386,7 @@ SCREENSHOT_DIR=./runs
 ### Step 9 — Install Python Dependencies
 
 ```bash
-# Create a virtual environment
+# Create a virtual environment with Python 3.12
 python3.12 -m venv .venv
 source .venv/bin/activate
 
@@ -645,7 +647,7 @@ reflex-arc/
 | ID | Decision | Options | Decide by |
 |----|----------|---------|-----------|
 | D1 | Hero task | Reminders, Finder, or Notes→Mail | End of week 2 (Oct 11) |
-| D2 | How orchestrator talks to Driver | Python SDK (`cua_driver`) or CLI (`cua-driver call`) | Week 2 |
+| D2 | How orchestrator talks to Driver | Python SDK (see DECISIONS.md) | ✅ Sep 23, 2026 |
 | D3 | Sandbox approach | Dedicated macOS user now; Lume VM later if Driver runs inside it | Week 4, final in weeks 9–10 |
 | D4 | Planner/text LLM model | Any vision-capable model on OpenRouter, picked by cost + screenshot accuracy | Week 3 |
 | D5 | Console frontend | Plain HTML+JS, or React | Week 10 |
