@@ -154,7 +154,8 @@ class KevBackend(DecisionBackend):
         """Make a decision using local kev server."""
         start_time = time.time()
         
-        # Convert our request to kev format (same as Jev)
+        # Convert our request to kev format (TypeSafe-compatible)
+        # kev expects the same format as Jev's API
         payload = {
             "state": request.state,
             "questions": []
@@ -190,6 +191,7 @@ class KevBackend(DecisionBackend):
         choice_responses = {}
         noul_responses = {}
         
+        # kev returns answers in the same format as Jev
         for q_name, answer in data.get("answers", {}).items():
             if "chosen_option" in answer:
                 choice_responses[q_name] = ChoiceResponse(
