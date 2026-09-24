@@ -61,72 +61,26 @@ async def main():
             sys.exit(1)
     
     elif command == "test":
-        print("Running test with FakeBody...")
+        print("Running test with FakeBody and real kev backend...")
         
         # Create a simple test with FakeBody
         fake_body = FakeBody()
         
-        # For testing, we'll use a mock backend to avoid kev server API issues
-        from src.backend.client import DecisionBackend, DecisionResponse, ChoiceResponse, NoulResponse
-        import time
+        # Use real kev backend for testing
+        config = LoopConfig(
+            backend_type="kev",  # Use real kev backend
+            max_steps=2,
+            max_time_seconds=30,
+        )
         
-        class MockBackend(DecisionBackend):
-            async def decide(self, request):
-                # Mock decision response
-                return DecisionResponse(
-                    choice_responses={
-                        "select_element": ChoiceResponse(
-                            chosen_option="e0",
-                            confidence=0.9,
-                            probabilities={"e0": 0.9, "e1": 0.1},
-                        )
-                    },
-                    noul_responses={
-                        "goal_reached": NoulResponse(
-                            answer=False,
-                            confidence=0.9,
-                            probability_true=0.1,
-                        ),
-                        "error_visible": NoulResponse(
-                            answer=False,
-                            confidence=0.9,
-                            probability_true=0.1,
-                        ),
-                    },
-                    model_version="mock-1.0",
-                    latency_ms=50.0,
-                )
-            
-            def get_model_version(self):
-                return "mock-1.0"
+        result = await run_task("Test task", body=fake_body, config=config)
         
-        # Monkey-patch the backend creation for testing
-        import src.orchestrator.loop as loop_module
-        original_create = loop_module.create_backend
-        
-        def mock_create(backend_type, **kwargs):
-            return MockBackend()
-        
-        loop_module.create_backend = mock_create
-        
-        try:
-            config = LoopConfig(
-                backend_type="mock",  # Use mock backend for testing
-                max_steps=2,
-                max_time_seconds=30,
-            )
-            
-            result = await run_task("Test task", body=fake_body, config=config)
-            
-            if result["success"]:
-                print(f"\n✓ Test passed")
-                print(f"  Actions logged: {len(fake_body.get_actions_log())}")
-            else:
-                print(f"\n✗ Test failed: {result['error']}")
-                sys.exit(1)
-        finally:
-            # Restore original function
-            loop_module.create_backend = original_create
+        if result["success"]:
+            print(f"\n✓ Test passed")
+            print(f"  Actions logged: {len(fake_body.get_actions_log())}")
+        else:
+            print(f"\n✗ Test failed: {result['error']}")
+            sys.exit(1)
     
     else:
         print(f"Unknown command: {command}")

@@ -133,6 +133,11 @@ class JevBackend(DecisionBackend):
     def get_model_version(self) -> str:
         """Get the Jev model version."""
         return self.model
+    
+    async def shutdown(self) -> None:
+        """Close the TypeSafe client."""
+        # TypeSafeClient doesn't have async close, no cleanup needed
+        pass
 
 
 class KevBackend(DecisionBackend):
@@ -148,63 +153,61 @@ class KevBackend(DecisionBackend):
         """
         self.base_url = base_url
         self.model = model
-        self.client = httpx.AsyncClient(timeout=30.0)
+        
+        if TYPESAFE_SDK_AVAILABLE:
+            self.client = TypeSafeClient(
+                api_key="local",
+                base_url=base_url,
+                model=model,
+            )
+        else:
+            raise ImportError("typesafe-sdk is required for KevBackend")
     
     async def decide(self, request: DecisionRequest) -> DecisionResponse:
-        """Make a decision using local kev server."""
+        """Make a decision using local kev server via TypeSafe SDK."""
         start_time = time.time()
         
-        # Convert our request to kev format (TypeSafe-compatible)
-        # kev expects the same format as Jev's API
-        payload = {
-            "state": request.state,
-            "questions": []
-        }
+        # Convert our request to TypeSafe SDK format
+        questions = {}
         
         for q in request.questions:
             if isinstance(q, ChoiceQuestion):
-                payload["questions"].append({
-                    "type": "choice",
-                    "name": q.name,
-                    "options": q.options,
-                })
+                # Convert ChoiceQuestion to TypeSafe Choice format
+                questions[q.name] = Choice(
+                    instructions=q.context or "Select the best option",
+                    criteria={option: None for option in q.options}
+                )
             elif isinstance(q, NoulQuestion):
-                payload["questions"].append({
-                    "type": "noul",
-                    "name": q.name,
-                    "statement": q.statement,
-                })
+                # Convert NoulQuestion to TypeSafe Noul format
+                questions[q.name] = Noul(instructions=q.statement or "Answer yes or no")
         
-        # Call kev server
+        # Call kev server via TypeSafe SDK
         try:
-            response = await self.client.post(
-                f"{self.base_url}/v1/systemone",
-                json=payload,
+            response = self.client.system_one(
+                state=request.state,
+                questions=questions,
             )
-            response.raise_for_status()
-        except httpx.HTTPError as e:
+        except Exception as e:
             raise RuntimeError(f"kev server call failed: {e}")
-        
-        data = response.json()
         
         # Parse response
         choice_responses = {}
         noul_responses = {}
         
-        # kev returns answers in the same format as Jev
-        for q_name, answer in data.get("answers", {}).items():
-            if "chosen_option" in answer:
-                choice_responses[q_name] = ChoiceResponse(
-                    chosen_option=answer["chosen_option"],
-                    confidence=answer.get("confidence", 0.0),
-                    probabilities=answer.get("probabilities", {}),
-                )
-            elif "answer" in answer:
-                noul_responses[q_name] = NoulResponse(
-                    answer=answer["answer"],
-                    confidence=answer.get("confidence", 0.0),
-                    probability_true=answer.get("probability_true", 0.0),
-                )
+        # TypeSafe SDK returns answers in .choices and .nouls
+        for name, choice_answer in response.choices.items():
+            choice_responses[name] = ChoiceResponse(
+                chosen_option=choice_answer.choice,
+                confidence=0.0,  # TypeSafe SDK doesn't provide confidence by default
+                probabilities={},  # TypeSafe SDK doesn't provide probabilities by default
+            )
+        
+        for name, noul_answer in response.nouls.items():
+            noul_responses[name] = NoulResponse(
+                answer=noul_answer.noul,
+                confidence=0.0,  # TypeSafe SDK doesn't provide confidence by default
+                probability_true=0.0,  # TypeSafe SDK doesn't provide probability by default
+            )
         
         latency_ms = (time.time() - start_time) * 1000
         
@@ -220,8 +223,9 @@ class KevBackend(DecisionBackend):
         return self.model
     
     async def shutdown(self) -> None:
-        """Close the HTTP client."""
-        await self.client.aclose()
+        """Close the TypeSafe client."""
+        # TypeSafeClient doesn't have async close, no cleanup needed
+        pass
 
 
 class LLMBackend(DecisionBackend):

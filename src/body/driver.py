@@ -179,9 +179,7 @@ class CuaBody(Body):
         try:
             if action.action_type == ActionType.CLICK:
                 click_input = ClickInput(
-                    target=ActionTarget.WINDOW(
-                        window_id=action.element_id,  # This will need proper window targeting
-                    ),
+                    target=ActionTarget.DESKTOP(display_id="main"),  # Use main display
                     button=ClickButton.LEFT,
                     position=ClickPosition.CENTER,
                 )
@@ -189,18 +187,14 @@ class CuaBody(Body):
                 
             elif action.action_type == ActionType.TYPE:
                 text_input = TypeTextInput(
-                    target=ActionTarget.WINDOW(
-                        window_id=action.element_id,
-                    ),
+                    target=ActionTarget.DESKTOP(display_id="main"),
                     text=action.text or "",
                 )
                 result = await self.driver.type_text(text_input)
                 
             elif action.action_type == ActionType.PRESS:
                 key_press_input = PressKeyInput(
-                    target=ActionTarget.WINDOW(
-                        window_id=action.element_id,
-                    ),
+                    target=ActionTarget.DESKTOP(display_id="main"),
                     keys=[action.key or ""],
                 )
                 result = await self.driver.press_key(key_press_input)
