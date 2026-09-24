@@ -17,6 +17,7 @@ try:
         GetDesktopStateInput,
         ListAppsInput,
         ListWindowsInput,
+        GetWindowStateInput,
         ClickInput,
         ClickButton,
         ClickPosition,
@@ -103,30 +104,49 @@ class CuaBody(Body):
             await self.initialize()
         
         try:
-            # Get desktop state
-            result = await self.driver.get_desktop_state(
-                GetDesktopStateInput(
+            # Get list of windows to find frontmost
+            from cua_driver import ListWindowsInput
+            windows_result = await self.driver.list_windows(ListWindowsInput(pid=None, on_screen_only=True))
+            
+            if not windows_result.windows:
+                raise RuntimeError("No windows found")
+            
+            # Get the frontmost window (highest z_index)
+            frontmost_window = max(windows_result.windows, key=lambda w: w.z_index)
+            
+            # Get window state with accessibility tree
+            # GetWindowStateInput imported at top
+            screenshot_path = screenshot_path or Path.cwd() / "runs" / "window_screenshot.png"
+            screenshot_path.parent.mkdir(exist_ok=True)
+            
+            window_result = await self.driver.get_window_state(
+                GetWindowStateInput(
+                    pid=frontmost_window.pid,
+                    window_id=frontmost_window.window_id,
                     session=self.session,
-                    screenshot_out_file=str(screenshot_path) if screenshot_path else None,
+                    query=None,
+                    include_accessibility_tree=True,
+                    include_screenshot=True,
+                    screenshot_out_file=str(screenshot_path),
+                    max_elements=255,  # Limit to kev/Jev requirement
+                    max_depth=10,
+                    max_dimension=1000
                 )
             )
             
-            # Handle different response formats
-            if hasattr(result, 'is_error') and result.is_error:
-                raise RuntimeError(f"Cua Driver error: {result.text}")
-            
-            # Parse the UI tree from the result
-            elements = self._parse_ui_tree(result)
-            
-            # Get window info (simplified - will need actual Cua Driver API calls)
-            window_id = "frontmost"  # Placeholder
-            title = "Unknown Window"  # Placeholder
-            app_name = "Unknown App"  # Placeholder
+            # Check if the result is degraded
+            if window_result.degraded:
+                print(f"Warning: Window state degraded: {window_result.degraded_reason}")
+                # Fall back to basic window info
+                elements = []
+            else:
+                # Parse accessibility elements
+                elements = self._parse_accessibility_elements(window_result.elements)
             
             return WindowSnapshot(
-                window_id=window_id,
-                title=title,
-                app_name=app_name,
+                window_id=str(frontmost_window.window_id),
+                title=window_result.window_title or frontmost_window.app_name,
+                app_name=window_result.app_name,
                 elements=elements,
                 screenshot_path=screenshot_path,
             )
@@ -149,25 +169,49 @@ class CuaBody(Body):
                 screenshot_path=screenshot_path,
             )
     
-    def _parse_ui_tree(self, cua_result: Any) -> List[UIElement]:
-        """Parse Cua Driver's UI tree into our UIElement format."""
-        # This is a placeholder implementation
-        # The actual implementation will need to parse the specific format
-        # that Cua Driver returns in its desktop state response
-        
+    def _parse_accessibility_elements(self, cua_elements: List[Any]) -> List[UIElement]:
+        """Parse Cua Driver accessibility elements into our UIElement format."""
         elements = []
         element_counter = 0
         
-        # Placeholder: Create some dummy elements for now
-        # In production, this will parse the actual Cua Driver response
-        elements.append(UIElement(
-            element_id=f"e{element_counter}",
-            role="button",
-            label="Example Button",
-            enabled=True,
-            visible=True,
-        ))
-        element_counter += 1
+        def parse_element_recursive(cua_elem, parent_id: Optional[str] = None) -> None:
+            nonlocal element_counter
+            if element_counter >= 255:  # kev/Jev limit
+                return
+            
+            try:
+                # Extract element properties
+                elem_id = f"e{element_counter}"
+                role = getattr(cua_elem, 'role', 'unknown')
+                label = getattr(cua_elem, 'label', None)
+                value = getattr(cua_elem, 'value', None)
+                enabled = getattr(cua_elem, 'enabled', True)
+                visible = getattr(cua_elem, 'visible', True)
+                
+                # Create UIElement
+                ui_element = UIElement(
+                    element_id=elem_id,
+                    role=role,
+                    label=label or f"{role} {element_counter}",
+                    value=value,
+                    enabled=enabled,
+                    visible=visible,
+                    parent_id=parent_id,
+                )
+                elements.append(ui_element)
+                element_counter += 1
+                
+                # Recursively parse children
+                if hasattr(cua_elem, 'children') and cua_elem.children:
+                    for child in cua_elem.children:
+                        parse_element_recursive(child, elem_id)
+                        
+            except Exception as e:
+                print(f"Error parsing element: {e}")
+        
+        # Start parsing from root elements
+        for cua_elem in cua_elements:
+            parse_element_recursive(cua_elem)
         
         return elements
     
