@@ -81,6 +81,14 @@ class CuaBody(Body):
         self.driver: Optional[CuaDriver] = None
         self.session: Optional[str] = None
         self._initialized = False
+        
+        # Store current window information for targeting
+        self.current_window_pid: Optional[int] = None
+        self.current_window_id: Optional[int] = None
+        self.current_window_info: Optional[Any] = None
+        
+        # Store element mapping for targeting
+        self.element_map: Dict[str, Any] = {}  # Maps element_id -> Cua element
     
     async def initialize(self) -> None:
         """Initialize the Cua Driver."""
@@ -113,6 +121,11 @@ class CuaBody(Body):
             
             # Get the frontmost window (highest z_index)
             frontmost_window = max(windows_result.windows, key=lambda w: w.z_index)
+            
+            # Store window information for targeting
+            self.current_window_pid = frontmost_window.pid
+            self.current_window_id = frontmost_window.window_id
+            self.current_window_info = frontmost_window
             
             # Get window state with accessibility tree
             # GetWindowStateInput imported at top
@@ -173,6 +186,7 @@ class CuaBody(Body):
         """Parse Cua Driver accessibility elements into our UIElement format."""
         elements = []
         element_counter = 0
+        self.element_map = {}  # Reset element map
         
         def parse_element_recursive(cua_elem, parent_id: Optional[str] = None) -> None:
             nonlocal element_counter
@@ -188,6 +202,17 @@ class CuaBody(Body):
                 enabled = getattr(cua_elem, 'enabled', True)
                 visible = getattr(cua_elem, 'visible', True)
                 
+                # Extract position/bounds if available
+                frame = getattr(cua_elem, 'frame', None)
+                position = None
+                if frame:
+                    position = {
+                        'x': getattr(frame, 'x', 0),
+                        'y': getattr(frame, 'y', 0),
+                        'width': getattr(frame, 'w', 0),
+                        'height': getattr(frame, 'h', 0),
+                    }
+                
                 # Create UIElement
                 ui_element = UIElement(
                     element_id=elem_id,
@@ -199,6 +224,16 @@ class CuaBody(Body):
                     parent_id=parent_id,
                 )
                 elements.append(ui_element)
+                
+                # Store mapping for targeting
+                self.element_map[elem_id] = {
+                    'cua_element': cua_elem,
+                    'position': position,
+                    'frame': frame,
+                    'pid': self.current_window_pid,
+                    'window_id': self.current_window_id,
+                }
+                
                 element_counter += 1
                 
                 # Recursively parse children
@@ -215,32 +250,129 @@ class CuaBody(Body):
         
         return elements
     
+    def _get_element_target(self, element_id: str) -> Optional[Any]:
+        """Get the Cua Driver target for a specific element."""
+        if element_id not in self.element_map:
+            print(f"Warning: Element {element_id} not found in element map")
+            return None
+        
+        element_data = self.element_map[element_id]
+        return element_data
+    
+    def _find_element_coordinates(self, element_id: str) -> Optional[Dict[str, float]]:
+        """Find the coordinates for a specific element."""
+        element_data = self._get_element_target(element_id)
+        if not element_data:
+            return None
+        
+        position = element_data.get('position')
+        if not position:
+            print(f"Warning: No position data for element {element_id}")
+            return None
+        
+        # Calculate center point
+        x = position['x'] + position['width'] / 2
+        y = position['y'] + position['height'] / 2
+        
+        return {'x': x, 'y': y}
+    
     async def act(self, action: Action) -> bool:
         """Perform an action on a UI element."""
         if not self._initialized:
             await self.initialize()
         
         try:
+            # Try element-level targeting first
+            element_data = self._get_element_target(action.element_id)
+            
             if action.action_type == ActionType.CLICK:
-                click_input = ClickInput(
-                    target=ActionTarget.DESKTOP(display_id="main"),  # Use main display
-                    button=ClickButton.LEFT,
-                    position=ClickPosition.CENTER,
-                )
+                if element_data and element_data.get('position'):
+                    # Use element coordinates for precise clicking
+                    coords = self._find_element_coordinates(action.element_id)
+                    if coords:
+                        click_input = ClickInput(
+                            target=ActionTarget.DESKTOP(display_id="main"),
+                            button=ClickButton.LEFT,
+                            position=ClickPosition.COORDINATES(
+                                x=coords['x'],
+                                y=coords['y']
+                            ),
+                        )
+                    else:
+                        # Fallback to desktop targeting
+                        click_input = ClickInput(
+                            target=ActionTarget.DESKTOP(display_id="main"),
+                            button=ClickButton.LEFT,
+                            position=ClickPosition.CENTER,
+                        )
+                else:
+                    # Use window-level targeting
+                    if self.current_window_pid and self.current_window_id:
+                        click_input = ClickInput(
+                            target=ActionTarget.WINDOW(
+                                pid=self.current_window_pid,
+                                window_id=self.current_window_id,
+                            ),
+                            button=ClickButton.LEFT,
+                            position=ClickPosition.CENTER,
+                        )
+                    else:
+                        # Fallback to desktop targeting
+                        click_input = ClickInput(
+                            target=ActionTarget.DESKTOP(display_id="main"),
+                            button=ClickButton.LEFT,
+                            position=ClickPosition.CENTER,
+                        )
                 result = await self.driver.click(click_input)
                 
             elif action.action_type == ActionType.TYPE:
-                text_input = TypeTextInput(
-                    target=ActionTarget.DESKTOP(display_id="main"),
-                    text=action.text or "",
-                )
+                if element_data:
+                    # Use window-level targeting for typing
+                    if self.current_window_pid and self.current_window_id:
+                        text_input = TypeTextInput(
+                            target=ActionTarget.WINDOW(
+                                pid=self.current_window_pid,
+                                window_id=self.current_window_id,
+                            ),
+                            text=action.text or "",
+                        )
+                    else:
+                        # Fallback to desktop targeting
+                        text_input = TypeTextInput(
+                            target=ActionTarget.DESKTOP(display_id="main"),
+                            text=action.text or "",
+                        )
+                else:
+                    # Fallback to desktop targeting
+                    text_input = TypeTextInput(
+                        target=ActionTarget.DESKTOP(display_id="main"),
+                        text=action.text or "",
+                    )
                 result = await self.driver.type_text(text_input)
                 
             elif action.action_type == ActionType.PRESS:
-                key_press_input = PressKeyInput(
-                    target=ActionTarget.DESKTOP(display_id="main"),
-                    keys=[action.key or ""],
-                )
+                if element_data:
+                    # Use window-level targeting for key presses
+                    if self.current_window_pid and self.current_window_id:
+                        key_press_input = PressKeyInput(
+                            target=ActionTarget.WINDOW(
+                                pid=self.current_window_pid,
+                                window_id=self.current_window_id,
+                            ),
+                            keys=[action.key or ""],
+                        )
+                    else:
+                        # Fallback to desktop targeting
+                        key_press_input = PressKeyInput(
+                            target=ActionTarget.DESKTOP(display_id="main"),
+                            keys=[action.key or ""],
+                        )
+                else:
+                    # Fallback to desktop targeting
+                    key_press_input = PressKeyInput(
+                        target=ActionTarget.DESKTOP(display_id="main"),
+                        keys=[action.key or ""],
+                    )
                 result = await self.driver.press_key(key_press_input)
                 
             else:
