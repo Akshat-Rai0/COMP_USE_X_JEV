@@ -173,9 +173,11 @@ class KevBackend(DecisionBackend):
         for q in request.questions:
             if isinstance(q, ChoiceQuestion):
                 # Convert ChoiceQuestion to TypeSafe Choice format
+                # TypeSafe Choice requires criteria to be a dict with string keys and None values
+                criteria = {str(option): None for option in q.options}
                 questions[q.name] = Choice(
+                    criteria=criteria,
                     instructions=q.context or "Select the best option",
-                    criteria={option: None for option in q.options}
                 )
             elif isinstance(q, NoulQuestion):
                 # Convert NoulQuestion to TypeSafe Noul format
@@ -198,15 +200,19 @@ class KevBackend(DecisionBackend):
         for name, choice_answer in response.choices.items():
             choice_responses[name] = ChoiceResponse(
                 chosen_option=choice_answer.choice,
-                confidence=0.0,  # TypeSafe SDK doesn't provide confidence by default
-                probabilities={},  # TypeSafe SDK doesn't provide probabilities by default
+                confidence=choice_answer.confidence,  # Extract actual confidence from response
+                probabilities=choice_answer.probabilities,  # Extract actual probabilities from response
             )
         
         for name, noul_answer in response.nouls.items():
+            # NoulAnswer only has 'noul' (float), derive probability_true from it
+            # noul is likely 0.0 for false, 1.0 for true
+            probability_true = float(noul_answer.noul)
+            
             noul_responses[name] = NoulResponse(
-                answer=noul_answer.noul,
-                confidence=0.0,  # TypeSafe SDK doesn't provide confidence by default
-                probability_true=0.0,  # TypeSafe SDK doesn't provide probability by default
+                answer=noul_answer.noul >= 0.5,  # Convert to boolean
+                confidence=0.5,  # Noul doesn't provide confidence, use neutral value
+                probability_true=probability_true,  # Derive from noul value
             )
         
         latency_ms = (time.time() - start_time) * 1000

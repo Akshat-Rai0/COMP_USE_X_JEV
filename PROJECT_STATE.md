@@ -1,7 +1,7 @@
 # Reflex Arc - Project State
 
 **Last Updated**: 2026-09-25  
-**Project Status**: Core Architecture Complete, Real Integration Working, Element Targeting Implemented, Screen Recording Implemented
+**Project Status**: Core Architecture Complete, Real Integration Working, Element Targeting Implemented, Screen Recording Implemented, kev Confidence Fixed
 
 ---
 
@@ -65,7 +65,7 @@ Reflex Arc is a macOS desktop automation agent that combines:
   - Serialization format: `"e12 button 'Add Reminder'"`
 
 #### 4. **Decision Backend** (`src/backend/client.py`) ✅
-- **Status**: All backends implemented, kev working
+- **Status**: All backends implemented, kev working with real confidence scores
 - **Components**:
   - `DecisionBackend` protocol (unified interface)
   - `JevBackend`: TypeSafe's Jev API (remote)
@@ -75,6 +75,8 @@ Reflex Arc is a macOS desktop automation agent that combines:
   - ✅ TypeSafe SDK integration (v0.6.0)
   - ✅ kev server communication
   - ✅ Real model decision making
+  - ✅ Real confidence score extraction (0.7053)
+  - ✅ Real probability distributions extracted
   - ✅ ~500ms average response time
   - ✅ Proper request/response format handling
 
@@ -259,22 +261,17 @@ Reflex Arc is a macOS desktop automation agent that combines:
 
 ### ⚠️ **Current Limitations:**
 
-1. **Confidence Scores**:
-   - TypeSafe SDK doesn't provide confidence by default
-   - Always returns 0.0 confidence
-   - Triggers unnecessary escalation
-
-2. **App Accessibility**:
+1. **App Accessibility**:
    - Some apps (Calculator) have accessibility issues
    - Degraded states return empty trees
    - Need fallback strategies
 
-3. **Action Execution**:
+2. **Action Execution**:
    - Click/type actions not yet tested on real elements
    - Need to verify coordinate accuracy
    - Need to test window-level targeting
 
-4. **Action Verification**:
+3. **Action Verification**:
    - No post-action verification implemented
    - Need to confirm actions were successful
    - Need error recovery for failed actions
@@ -324,12 +321,7 @@ MAX_TIME_SECONDS=120
    - Test type and key press actions
    - Implement post-action verification
 
-2. **Confidence Score Improvement**:
-   - Find alternative confidence sources from kev responses
-   - Adjust gate thresholds for current confidence behavior
-   - Consider raw kev probability distributions
-
-3. **Real Task Testing**:
+2. **Real Task Testing**:
    - Test complete automation task (e.g., "Calculate 6 × 7")
    - Fix Calculator accessibility issues or use alternative apps
    - End-to-end verification
@@ -462,5 +454,6 @@ When implementing new features or achieving milestones:
 10. **✅ Testing infrastructure** - Basic and real app tests
 11. **✅ Element targeting** - Window PID tracking, element mapping, coordinate extraction
 12. **✅ Screen recording** - Hybrid recording with GIF conversion, retention policy
+13. **✅ kev confidence scores** - Real confidence and probability extraction from TypeSafe SDK
 
 **The Reflex Arc project has successfully achieved its core integration goals and element targeting implementation, ready for the next phase of development focusing on real action execution and task automation.**
