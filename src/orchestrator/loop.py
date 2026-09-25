@@ -37,6 +37,7 @@ from src.backend.client import DecisionBackend, create_backend
 from src.gates.evaluator import GateEvaluator
 from src.planner.cortex import PlannerCortex
 from src.trace.writer import TraceWriter
+from src.utils.gif_converter import convert_frames_to_gif, cleanup_frames
 
 
 @dataclass
@@ -49,6 +50,11 @@ class LoopConfig:
     min_gap: float = 0.15
     screenshot_dir: Optional[Path] = None
     trace_db_path: Optional[Path] = None
+    # Screen recording configuration
+    record_screen: bool = True  # Always enabled by default
+    create_gif: bool = True   # Convert recording to GIF
+    max_recordings: int = 10  # Keep only most recent N recordings
+    capture_idle: bool = False  # Hybrid: skip idle time
 
 
 class OrchestratorLoop:
@@ -123,6 +129,10 @@ class OrchestratorLoop:
         print(f"Starting task: {task}")
         print(f"Run ID: {self.current_run_id}")
         
+        # Start screen recording if enabled
+        if self.config.record_screen and isinstance(self.body, CuaBody):
+            self.body.start_recording(self.current_run_id)
+        
         try:
             # Main execution loop
             while not self.state.should_stop():
@@ -164,6 +174,46 @@ class OrchestratorLoop:
                 "steps": self.state.current_step,
                 "run_id": self.current_run_id,
             }
+        finally:
+            # Stop recording and convert to GIF if enabled
+            if self.config.record_screen and isinstance(self.body, CuaBody):
+                frames_dir = self.body.stop_recording()
+                if frames_dir and self.config.create_gif:
+                    try:
+                        # Get captured frames
+                        frame_paths = self.body.get_recording_frames()
+                        
+                        if frame_paths:
+                            # Create GIF
+                            gif_dir = Path.cwd() / "runs" / "gifs"
+                            gif_dir.mkdir(parents=True, exist_ok=True)
+                            
+                            timestamp = datetime.utcnow().strftime("%Y%m%d_%H%M%S")
+                            gif_path = gif_dir / f"run_{self.current_run_id}_{timestamp}.gif"
+                            
+                            print(f"Converting {len(frame_paths)} frames to GIF...")
+                            result_path = convert_frames_to_gif(
+                                frame_paths,
+                                gif_path,
+                                duration=0.5,
+                                loop=True,
+                                fps=2
+                            )
+                            
+                            if result_path:
+                                # Update trace with GIF path
+                                self.trace_writer.update_run_gif(self.current_run_id, result_path)
+                                print(f"✓ GIF created: {result_path}")
+                                
+                                # Cleanup old recordings
+                                self.trace_writer.cleanup_old_recordings(self.config.max_recordings)
+                                
+                                # Cleanup frame files
+                                cleanup_frames(frame_paths)
+                            else:
+                                print("⚠️  GIF creation failed")
+                    except Exception as e:
+                        print(f"⚠️  GIF conversion failed: {e}")
     
     async def _execute_step(self) -> None:
         """Execute a single step of the 5-step process."""
@@ -298,7 +348,15 @@ class OrchestratorLoop:
     async def _execute_action(self, action: Action, window_snapshot: WindowSnapshot) -> bool:
         """Execute an action and return success status."""
         try:
+            # Capture frame before action if recording is enabled
+            if self.config.record_screen and isinstance(self.body, CuaBody):
+                await self.body.capture_action_frame("before_action")
+            
             success = await self.body.act(action)
+            
+            # Capture frame after action if recording is enabled
+            if self.config.record_screen and isinstance(self.body, CuaBody):
+                await self.body.capture_action_frame("after_action")
             
             if not success:
                 self.state.recent_failures += 1

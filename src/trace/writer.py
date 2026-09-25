@@ -63,7 +63,8 @@ class TraceWriter:
                     total_cost REAL DEFAULT 0.0,
                     backend_model TEXT,
                     planner_model TEXT,
-                    metadata JSON
+                    metadata JSON,
+                    gif_path TEXT
                 )
             """)
             
@@ -109,6 +110,13 @@ class TraceWriter:
                 CREATE INDEX IF NOT EXISTS idx_runs_start_time 
                 ON runs (start_time)
             """)
+            
+            # Add gif_path column if it doesn't exist (migration)
+            try:
+                cursor.execute("ALTER TABLE runs ADD COLUMN gif_path TEXT")
+            except sqlite3.OperationalError:
+                # Column already exists, ignore error
+                pass
             
             conn.commit()
     
@@ -402,3 +410,78 @@ class TraceWriter:
         
         with open(output_path, 'w') as f:
             json.dump(export_data, f, indent=2, default=str)
+    
+    def update_run_gif(self, run_id: int, gif_path: Path) -> None:
+        """
+        Update a run with GIF path.
+        
+        Args:
+            run_id: Run ID to update
+            gif_path: Path to the GIF file
+        """
+        with sqlite3.connect(self.db_path) as conn:
+            cursor = conn.cursor()
+            cursor.execute("""
+                UPDATE runs SET gif_path = ? WHERE id = ?
+            """, (str(gif_path), run_id))
+            conn.commit()
+    
+    def cleanup_old_recordings(self, max_keep: int = 10) -> int:
+        """
+        Delete old GIFs and frames, keeping only the most recent N.
+        
+        Args:
+            max_keep: Number of recordings to keep
+            
+        Returns:
+            Number of recordings deleted
+        """
+        with sqlite3.connect(self.db_path) as conn:
+            cursor = conn.cursor()
+            
+            # Get all runs with gif_path, sorted by start_time DESC
+            cursor.execute("""
+                SELECT id, gif_path FROM runs 
+                WHERE gif_path IS NOT NULL 
+                ORDER BY start_time DESC
+            """)
+            
+            runs = cursor.fetchall()
+            
+            if len(runs) <= max_keep:
+                return 0
+            
+            # Delete recordings beyond max_keep
+            to_delete = runs[max_keep:]
+            deleted_count = 0
+            
+            for run_id, gif_path in to_delete:
+                try:
+                    # Delete GIF file
+                    if gif_path:
+                        gif_file = Path(gif_path)
+                        if gif_file.exists():
+                            gif_file.unlink()
+                    
+                    # Delete frame directory
+                    frame_dir = self.screenshot_dir / "frames" / str(run_id)
+                    if frame_dir.exists():
+                        import shutil
+                        shutil.rmtree(frame_dir)
+                    
+                    # Update database to remove gif_path
+                    cursor.execute("""
+                        UPDATE runs SET gif_path = NULL WHERE id = ?
+                    """, (run_id,))
+                    
+                    deleted_count += 1
+                    
+                except Exception as e:
+                    print(f"Warning: Failed to delete recording for run {run_id}: {e}")
+            
+            conn.commit()
+            
+            if deleted_count > 0:
+                print(f"✓ Cleaned up {deleted_count} old recordings")
+            
+            return deleted_count

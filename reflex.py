@@ -36,16 +36,43 @@ async def main():
     
     if command == "run":
         if len(sys.argv) < 3:
-            print("Usage: python reflex.py run <task>")
+            print("Usage: python reflex.py run <task> [options]")
+            print("Options:")
+            print("  --no-record    Disable screen recording")
+            print("  --no-gif       Disable GIF conversion")
+            print("  --keep N       Keep N most recent recordings")
             sys.exit(1)
         
-        task = " ".join(sys.argv[2:])
+        # Parse task and options
+        task_parts = []
+        no_record = False
+        no_gif = False
+        keep_recordings = None
+        
+        for arg in sys.argv[2:]:
+            if arg == "--no-record":
+                no_record = True
+            elif arg == "--no-gif":
+                no_gif = True
+            elif arg.startswith("--keep"):
+                try:
+                    keep_recordings = int(arg.split("=")[1])
+                except:
+                    print("Error: --keep requires a number (e.g., --keep=20)")
+                    sys.exit(1)
+            else:
+                task_parts.append(arg)
+        
+        task = " ".join(task_parts)
         
         # Load configuration from environment
         config = LoopConfig(
             backend_type="kev",  # Can be overridden with env var
             max_steps=40,
             max_time_seconds=120,
+            record_screen=not no_record,  # Override with CLI flag
+            create_gif=not no_gif,  # Override with CLI flag
+            max_recordings=keep_recordings if keep_recordings else 10,  # Override with CLI flag
         )
         
         # Run the task

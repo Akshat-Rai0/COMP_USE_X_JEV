@@ -19,6 +19,8 @@ dependencies = [
     "langgraph>=1.2.10",
     "cua-driver>=0.28.2",
     "python-dotenv>=1.0.0",
+    "imageio>=2.30.0",
+    "imageio-ffmpeg>=0.4.7",
 ]
 
 [project.optional-dependencies]

@@ -89,6 +89,13 @@ class CuaBody(Body):
         
         # Store element mapping for targeting
         self.element_map: Dict[str, Any] = {}  # Maps element_id -> Cua element
+        
+        # Screen recording state
+        self.recording_active: bool = False
+        self.recording_run_id: Optional[int] = None
+        self.recording_frames: List[Path] = []
+        self.recording_start_time: Optional[datetime] = None
+        self.recording_dir: Optional[Path] = None
     
     async def initialize(self) -> None:
         """Initialize the Cua Driver."""
@@ -430,6 +437,93 @@ class CuaBody(Body):
                 print(f"Error during shutdown: {e}")
         
         self._initialized = False
+    
+    def start_recording(self, run_id: int, screenshot_dir: Optional[Path] = None) -> None:
+        """
+        Start screen recording for a run.
+        
+        Args:
+            run_id: ID of the current run
+            screenshot_dir: Directory to store frames (defaults to ./runs/frames/<run_id>/)
+        """
+        if screenshot_dir is None:
+            screenshot_dir = Path.cwd() / "runs" / "frames" / str(run_id)
+        
+        # Create recording directory
+        screenshot_dir.mkdir(parents=True, exist_ok=True)
+        
+        # Initialize recording state
+        self.recording_active = True
+        self.recording_run_id = run_id
+        self.recording_frames = []
+        self.recording_start_time = datetime.utcnow()
+        self.recording_dir = screenshot_dir
+        
+        print(f"✓ Screen recording started for run {run_id}")
+        print(f"  Frames directory: {screenshot_dir}")
+    
+    async def capture_action_frame(self, label: str = "") -> Optional[Path]:
+        """
+        Capture a frame during action execution.
+        
+        Args:
+            label: Label for the frame (e.g., "before_action", "after_action")
+            
+        Returns:
+            Path to the captured frame, or None if recording is not active
+        """
+        if not self.recording_active:
+            return None
+        
+        if not self._initialized:
+            await self.initialize()
+        
+        try:
+            timestamp = datetime.utcnow().strftime("%Y%m%d_%H%M%S_%f")
+            frame_path = self.recording_dir / f"frame_{timestamp}_{label}.png"
+            
+            # Capture screenshot using Cua Driver
+            from cua_driver import GetDesktopStateInput
+            screenshot_result = await self.driver.get_desktop_state(
+                GetDesktopStateInput(
+                    session=self.session,
+                    screenshot_out_file=str(frame_path)
+                )
+            )
+            
+            # Store path in recording_frames list
+            self.recording_frames.append(frame_path)
+            
+            return frame_path
+            
+        except Exception as e:
+            print(f"Warning: Failed to capture frame: {e}")
+            return None
+    
+    def stop_recording(self) -> Optional[Path]:
+        """
+        Stop recording and return the list of captured frames.
+        
+        Returns:
+            Path to the recording directory, or None if no recording was active
+        """
+        if not self.recording_active:
+            return None
+        
+        self.recording_active = False
+        print(f"✓ Screen recording stopped")
+        print(f"  Frames captured: {len(self.recording_frames)}")
+        print(f"  Duration: {(datetime.utcnow() - self.recording_start_time).total_seconds():.1f}s")
+        
+        return self.recording_dir
+    
+    def is_recording(self) -> bool:
+        """Check if recording is currently active."""
+        return self.recording_active
+    
+    def get_recording_frames(self) -> List[Path]:
+        """Get the list of captured frame paths."""
+        return self.recording_frames
 
 
 class FakeBody(Body):
